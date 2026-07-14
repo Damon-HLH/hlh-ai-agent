@@ -1,0 +1,13 @@
+package com.hlh.hlhaiagent;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@SpringBootTest
+class HlhAiAgentApplicationTests {
+
+    @Test
+    void contextLoads() {
+    }
+
+}
