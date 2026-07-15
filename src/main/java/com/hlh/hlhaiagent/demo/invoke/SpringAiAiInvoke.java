@@ -2,6 +2,8 @@ package com.hlh.hlhaiagent.demo.invoke;
 
 
 import jakarta.annotation.Resource;
+
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
@@ -13,7 +15,6 @@ import org.springframework.stereotype.Component;
  */
 @Component  //在springboot 启动时 自动执行
 public class SpringAiAiInvoke implements CommandLineRunner {
-
     //按名称注入
     @Resource
     private ChatModel dashscopeChatModel;

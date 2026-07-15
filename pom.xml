@@ -29,6 +29,7 @@
     <properties>
         <java.version>21</java.version>
     </properties>
+
     <dependencies>
 
         <dependency>
@@ -37,7 +38,7 @@
             <version>5.8.37</version>
         </dependency>
 
-        <!-- Spring AI Alibaba Agent Framework -->
+        <!-- Spring AI Alibaba Agent Framework 基于Spring AI 1.1.2版本实现 -->
         <dependency>
             <groupId>com.alibaba.cloud.ai</groupId>
             <artifactId>spring-ai-alibaba-agent-framework</artifactId>
@@ -64,6 +65,20 @@
             <artifactId>langchain4j-community-dashscope</artifactId>
             <version>1.1.0-beta7</version>
             <scope>compile</scope>
+        </dependency>
+
+        <!-- 支持结构化输出  -->
+        <dependency>
+            <groupId>com.github.victools</groupId>
+            <artifactId>jsonschema-generator</artifactId>
+            <version>4.38.0</version>
+        </dependency>
+
+        <!--支持文件会话记忆持久化的序列化 -->
+        <dependency>
+            <groupId>com.esotericsoftware</groupId>
+            <artifactId>kryo</artifactId>
+            <version>5.6.2</version>
         </dependency>
 
         <!-- 阿里云百炼-灵积大模型服务      -->

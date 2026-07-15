@@ -1,6 +1,8 @@
 ### CUSTOM ###
-
 application-local.yml
+tmp
+prohibited-words.txt
+SensitiveWords.java
 
 HELP.md
 target/
