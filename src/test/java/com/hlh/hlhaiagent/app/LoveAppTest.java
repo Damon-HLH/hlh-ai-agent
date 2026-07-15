@@ -32,12 +32,13 @@ class LoveAppTest {
     }
 
 
-     @Test
+    @Test
     void doChatWithSensitiveWords() {
         String chatId = UUID.randomUUID().toString();
         String message = "你好，我是爱爱";
         String answer = loveApp.doChat(message, chatId);
     }
+
 
     @Test
     void doChatWithReport() {
@@ -47,4 +48,13 @@ class LoveAppTest {
         LoveApp.LoveReport loveReport = loveApp.doChatWithReport(message, chatId);
         Assertions.assertNotNull(loveReport);
     }
+
+    @Test
+    void doChatWithDatabase() {
+        String chatId = UUID.randomUUID().toString();
+        String message = "你好，我是hlh;你能告诉我如何让孙东篱更爱我吗？";
+        LoveApp.LoveReport loveReport = loveApp.doChatWithReport(message, chatId);
+        Assertions.assertNotNull(loveReport);
+    }
+
 }

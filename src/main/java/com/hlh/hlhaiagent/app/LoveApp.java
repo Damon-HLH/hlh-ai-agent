@@ -4,7 +4,9 @@ package com.hlh.hlhaiagent.app;
 
 import com.hlh.hlhaiagent.advisor.MyLoggerAdvisor;
 import com.hlh.hlhaiagent.advisor.ProhibitedWordAdvisor;
+import com.hlh.hlhaiagent.chatmemory.DatabaseChatMemory;
 import com.hlh.hlhaiagent.chatmemory.FileBasedChatMemory;
+import com.hlh.hlhaiagent.mapper.LoveReportMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
@@ -13,6 +15,7 @@ import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -40,6 +43,30 @@ public class LoveApp {
                                 .maxMessages(20)  //最大记忆窗口为20条
                                 .build();
         //创建 SpringAI 会话对象
+        chatClient = ChatClient.builder(dashscopeChatModel)
+                .defaultSystem(SYSTEM_PROMPT)
+                .defaultAdvisors(  //默认拦截器   对所有请求生效
+                        MessageChatMemoryAdvisor.builder(chatMemory).build(),  //对话记忆 advisor
+//                        // 自定义日志 Advisor，可按需开启
+                        new MyLoggerAdvisor(),
+//                        // 自定义推理增强 Advisor，可按需开启 会增加2倍输入token!
+//                        new ReReadingAdvisor()
+                        // (官方实现)内容安全顾问 Advisor 敏感词处理
+//                        new SafeGuardAdvisor(SensitiveWords.SENSITIVE_WORDS,"你好，这个问题我暂时无法回答，让我们换个话题再聊聊吧。",0)
+                        // 自己实现的敏感词顾问 Advisor
+                        new ProhibitedWordAdvisor()
+                ).build();
+    }
+
+    /**
+     * 初始化 AI 客户端 全参构造函数
+     * @param dashscopeChatModel 聊天模型
+     * @param loveReportMapper 恋爱报告Mapper
+     */
+    @Autowired  //默认 执行这个构造函数（component只能有一个构造函数 除非用Autowired指定）
+    public LoveApp(ChatModel dashscopeChatModel, LoveReportMapper loveReportMapper) {
+        //3.初始化基于数据库的对话记忆
+        ChatMemory chatMemory = new DatabaseChatMemory(loveReportMapper);
         chatClient = ChatClient.builder(dashscopeChatModel)
                 .defaultSystem(SYSTEM_PROMPT)
                 .defaultAdvisors(  //默认拦截器   对所有请求生效
