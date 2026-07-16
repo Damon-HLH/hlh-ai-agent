@@ -3,6 +3,7 @@ application-local.yml
 tmp
 prohibited-words.txt
 SensitiveWords.java
+src/main/resources/document
 
 HELP.md
 target/
@@ -24,6 +25,8 @@ target/
 *.iws
 *.iml
 *.ipr
+.m2-local
+.mvn
 
 ### NetBeans ###
 /nbproject/private/
