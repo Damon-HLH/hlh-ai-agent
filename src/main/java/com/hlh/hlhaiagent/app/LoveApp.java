@@ -8,6 +8,8 @@ import com.hlh.hlhaiagent.chatmemory.DatabaseChatMemory;
 import com.hlh.hlhaiagent.chatmemory.FileBasedChatMemory;
 import com.hlh.hlhaiagent.mapper.LoveReportMapper;
 import com.hlh.hlhaiagent.rag.LoveAppRagCloudAdvisorConfig;
+import com.hlh.hlhaiagent.rag.LoveAppRagCustomAdvisorFactory;
+import com.hlh.hlhaiagent.rag.QueryRewriter;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -164,11 +166,6 @@ public class LoveApp {
     @Resource
     private VectorStore loveAppVectorStore;
 
-    @Resource
-    private Advisor loveAppRagCloudAdvisor;
-
-    @Resource
-    private VectorStore pgVectorVectorStore;
 
     /**
      * 和 RAG 本地知识库进行对话
@@ -194,6 +191,8 @@ public class LoveApp {
         return content;
     }
 
+    @Resource
+    private Advisor loveAppRagCloudAdvisor;
 
      /**
      * 和 RAG 阿里云知识库进行对话
@@ -221,9 +220,12 @@ public class LoveApp {
         return content;
     }
 
+    @Resource
+    private VectorStore pgVectorVectorStore;
 
     /**
-     * 和 RAG 阿里云知识库进行对话(运用 RAG 检索增强服务)
+     * 和 RAG 阿里云 pgVector 知识库进行对话(运用 RAG 检索增强服务)
+     * 手动配置向量数据库连接并存储文档
      * @param message
      * @param chatId
      * @return
@@ -239,6 +241,45 @@ public class LoveApp {
 //                .advisors(loveAppRagCloudAdvisor)
                 // 应用 RAG 检索增强服务（基于 pgVector 向量存储）
                 .advisors(QuestionAnswerAdvisor.builder(pgVectorVectorStore).build())
+                .call()
+                .chatResponse();
+        String content = chatResponse.getResult().getOutput().getText();
+        log.info("\n ========== AI 对话记录 ==========\n" +
+                "    会话ID: {}\n" +
+                "    用户输入: {}\n" +
+                "    AI回复: {}\n" +
+                "    ================================",chatId,message,content);
+        return content;
+    }
+
+    @Resource
+    private QueryRewriter queryRewriter;
+
+    /**
+     * 和 RAG 本地知识库进行对话
+     * 增加功能：
+     * 1. 查询改写：将用户提示进行改写查询，提高搜索的质量
+     * 2. 增加一个自定义的 RAG 检索增强服务
+     *    文档查询器：包括自定义条件过滤(比如文档元数据限制 status)，相似度阈值，返回文档数量，
+     *    上下文增强：（如果没找到相关文档，则返回友好提示）
+     * @param message
+     * @param chatId
+     * @return
+     */
+    public String doChatWithRewriteEnhanced(String message,String chatId){
+        String rewritenMessage = queryRewriter.doQueryRewrite(message); //查询改写，利用ai改写用户提示
+        ChatResponse chatResponse = this.chatClient
+                .prompt()
+                .user(rewritenMessage)
+                .advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, chatId))
+                // 应用 RAG 知识库问答（本地加载文档，创建简易向量数据库存储文档）
+//                .advisors(QuestionAnswerAdvisor.builder(loveAppVectorStore).build())
+                // 应用 RAG 检索增强服务（基于云知识库服务）
+//                .advisors(loveAppRagCloudAdvisor)
+                // 应用 RAG 检索增强服务（基于 PgVector 向量存储）
+//                .advisors(QuestionAnswerAdvisor.builder(pgVectorVectorStore).build())
+                // 应用自定义的 RAG 检索增强服务（文档查询器 + 上下文增强）！！！
+                .advisors(LoveAppRagCustomAdvisorFactory.createLoveAppRagCustomAdvisor(loveAppVectorStore, "单身"))  //限制只在知识库中搜索 status标签 = 单身 的文档
                 .call()
                 .chatResponse();
         String content = chatResponse.getResult().getOutput().getText();

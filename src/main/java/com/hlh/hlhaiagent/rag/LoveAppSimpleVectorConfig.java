@@ -2,6 +2,7 @@ package com.hlh.hlhaiagent.rag;
 
 
 import jakarta.annotation.Resource;
+import kotlin.reflect.KVariance;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
@@ -15,10 +16,13 @@ import java.util.List;
  * 构造一个 VectorStore 对象，用于存储和检索向量数据
  */
 @Configuration
-public class LoveAppVectorConfig {
+public class LoveAppSimpleVectorConfig {
 
     @Resource
     private LoveAppDocumentLoader loveAppDocumentLoader;
+
+    @Resource
+    private MyKeyWordEnricher myKeyWordEnricher;
 
     //初始化向量数据库，并保存切分好的文档
     @Bean
@@ -27,7 +31,9 @@ public class LoveAppVectorConfig {
         SimpleVectorStore simpleVectorStore = SimpleVectorStore.builder(dashScopeEmbeddingModel).build();
         //调用文档加载器 得到划分好的文档chunks
         List<Document> documents = loveAppDocumentLoader.loadMarkDowns();
-        simpleVectorStore.add(documents);
+        //自动补充元信息
+        List<Document> enrichedDocuments = myKeyWordEnricher.enrichDocuments(documents);
+        simpleVectorStore.add(enrichedDocuments);
         return simpleVectorStore;
     }
 }
