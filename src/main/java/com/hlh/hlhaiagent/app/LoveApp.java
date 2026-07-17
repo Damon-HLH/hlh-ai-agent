@@ -167,6 +167,9 @@ public class LoveApp {
     @Resource
     private Advisor loveAppRagCloudAdvisor;
 
+    @Resource
+    private VectorStore pgVectorVectorStore;
+
     /**
      * 和 RAG 本地知识库进行对话
      * @param message
@@ -207,6 +210,35 @@ public class LoveApp {
 //                .advisors(QuestionAnswerAdvisor.builder(loveAppVectorStore).build())
                 // 应用 RAG 检索增强服务（基于云知识库服务）
                 .advisors(loveAppRagCloudAdvisor)
+                .call()
+                .chatResponse();
+        String content = chatResponse.getResult().getOutput().getText();
+        log.info("\n ========== AI 对话记录 ==========\n" +
+                "    会话ID: {}\n" +
+                "    用户输入: {}\n" +
+                "    AI回复: {}\n" +
+                "    ================================",chatId,message,content);
+        return content;
+    }
+
+
+    /**
+     * 和 RAG 阿里云知识库进行对话(运用 RAG 检索增强服务)
+     * @param message
+     * @param chatId
+     * @return
+     */
+    public String doChatWithRagCloudEnhanced(String message,String chatId){
+        ChatResponse chatResponse = this.chatClient
+                .prompt()
+                .user(message)
+                .advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, chatId))
+                // 应用 RAG 知识库问答（本地加载文档，创建简易向量数据库存储文档）
+//                .advisors(QuestionAnswerAdvisor.builder(loveAppVectorStore).build())
+                // 应用 RAG 检索增强服务（基于云知识库服务）
+//                .advisors(loveAppRagCloudAdvisor)
+                // 应用 RAG 检索增强服务（基于 pgVector 向量存储）
+                .advisors(QuestionAnswerAdvisor.builder(pgVectorVectorStore).build())
                 .call()
                 .chatResponse();
         String content = chatResponse.getResult().getOutput().getText();
