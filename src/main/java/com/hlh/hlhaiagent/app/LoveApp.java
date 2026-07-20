@@ -166,7 +166,6 @@ public class LoveApp {
     @Resource
     private VectorStore loveAppVectorStore;
 
-
     /**
      * 和 RAG 本地知识库进行对话
      * @param message

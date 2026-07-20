@@ -119,6 +119,14 @@
             <version>1.0.0-M6</version>
         </dependency>
 
+        <!--  读取github api -->
+        <dependency>
+            <groupId>org.kohsuke</groupId>
+            <artifactId>github-api</artifactId>
+            <version>1.326</version>
+            <scope>compile</scope>
+        </dependency>
+
         <!-- 自动整合PGVector 向量存储-->
 <!--        <dependency>-->
 <!--            <groupId>org.springframework.ai</groupId>-->
