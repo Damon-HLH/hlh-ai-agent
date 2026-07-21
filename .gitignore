@@ -5,6 +5,7 @@ prohibited-words.txt
 SensitiveWords.java
 src/main/resources/document
 src/main/resources/excels
+src/main/resources/prohibited
 
 HELP.md
 target/
