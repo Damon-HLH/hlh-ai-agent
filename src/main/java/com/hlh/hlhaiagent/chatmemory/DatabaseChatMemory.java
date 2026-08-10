@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * 更老旧 舍弃不用
  * 基于数据库持久化的对话记忆实现。
  * 使用 LoveReportMapper 将完整的对话消息列表存储在数据库中。
  * 每个对话对应一条数据库记录，使用 chatId 字段存储对话的唯一标识符。

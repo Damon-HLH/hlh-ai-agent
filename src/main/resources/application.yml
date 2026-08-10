@@ -25,3 +25,9 @@ knife4j:
   enable: true
   setting:
     language: zh_cn
+
+
+# 修改日志级别，查看Spring AI 更多调用细节
+logging:
+  level:
+    org.springframework.ai: DEBUG

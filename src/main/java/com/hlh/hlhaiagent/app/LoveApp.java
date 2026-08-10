@@ -6,6 +6,8 @@ import com.hlh.hlhaiagent.advisor.MyLoggerAdvisor;
 import com.hlh.hlhaiagent.advisor.ProhibitedWordAdvisor;
 import com.hlh.hlhaiagent.chatmemory.DatabaseChatMemory;
 import com.hlh.hlhaiagent.chatmemory.FileBasedChatMemory;
+import com.hlh.hlhaiagent.chatmemory.MySQLChatMemory;
+import com.hlh.hlhaiagent.chatmemory.MybatisPlusChatMemory;
 import com.hlh.hlhaiagent.mapper.LoveReportMapper;
 import com.hlh.hlhaiagent.rag.LoveAppRagCloudAdvisorConfig;
 import com.hlh.hlhaiagent.rag.LoveAppRagCustomAdvisorFactory;
@@ -67,11 +69,13 @@ public class LoveApp {
     /**
      * 初始化 AI 客户端
      * @param dashscopeChatModel
+     * 入参可以用基于数据库的对话记忆 mybatisPlusChatMemory
      */
     // 不用官方的 ChatClient.Builder builder 注入 ChatClient
     // 这个 dashscopeChatModel(Spring AI Alibaba) 用于直接注入到 ChatClient 中
     // 根据名称来注册 ChatModel  用于创建 ChatClient chatClient = ChatClient.builder(chatModel).build();
-    public LoveApp(ChatModel dashscopeChatModel) {
+    @Autowired
+    public LoveApp(ChatModel dashscopeChatModel, MybatisPlusChatMemory mybatisPlusChatMemory /*, MySQLChatMemory chatMemory*/) {
         //1. 初始化基于文件的对话记忆
         String fielDir = System.getProperty("user.dir")+ "/tmp/chat-memory";
         FileBasedChatMemory fileChatMemory = new FileBasedChatMemory(fielDir);
@@ -80,11 +84,13 @@ public class LoveApp {
                                 .chatMemoryRepository(new InMemoryChatMemoryRepository())
                                 .maxMessages(20)  //最大记忆窗口为20条
                                 .build();
+        //3. 基于数据库对的对话记忆 用mybatisPlusChatMemory
+        //------------------------------------------------
         //创建 SpringAI 会话对象
         chatClient = ChatClient.builder(dashscopeChatModel)
                 .defaultSystem(SYSTEM_PROMPT)  //系统预设
                 .defaultAdvisors(  //默认拦截器   对所有请求生效
-                        MessageChatMemoryAdvisor.builder(inChatmemory).build(),  //对话记忆 advisor，可更改会话记忆（fileChatMemory，inChatmemory）
+                        MessageChatMemoryAdvisor.builder(mybatisPlusChatMemory).build(),  //对话记忆 advisor，可更改会话记忆（fileChatMemory，inChatmemory）
 //                        // 自定义日志 Advisor，可按需开启
                         new MyLoggerAdvisor(),
 //                        // 自定义推理增强 Advisor，可按需开启 会增加2倍输入token!
@@ -96,11 +102,12 @@ public class LoveApp {
                 ).build();
     }
 
-//    /**
-//     * 初始化 AI 客户端 全参构造函数 用数据库持久化对话记忆
-//     * @param dashscopeChatModel 聊天模型
-//     * @param loveReportMapper 恋爱报告Mapper
-//     */
+    /**
+     * 初始化 AI 客户端 全参构造函数：用数据库持久化对话记忆-旧-数据库表设计老旧不好
+     * @param dashscopeChatModel 聊天模型
+     * @param loveReportMapper 恋爱报告Mapper
+     */
+    /**
 //    @Autowired  //默认执行这个构造函数（component只能有一个构造函数 除非用Autowired指定）
 //    public LoveApp(ChatModel dashscopeChatModel, LoveReportMapper loveReportMapper) {
 //        //3.初始化基于数据库的对话记忆
@@ -119,6 +126,7 @@ public class LoveApp {
 //                        new ProhibitedWordAdvisor()
 //                ).build();
 //    }
+        **/
 
     /**
      * AI 基础对话（支持多轮对话记忆）

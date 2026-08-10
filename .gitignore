@@ -3,9 +3,20 @@ application-local.yml
 tmp
 prohibited-words.txt
 SensitiveWords.java
+
+#忽略资源目录
 src/main/resources/document
 src/main/resources/excels
 src/main/resources/prohibited
+
+# 忽略测试目录下除 app/ 外的所有文件和目录
+src/test/java/com/hlh/hlhaiagent/*
+src/test/java/com/hlh/hlhaiagent/rag/
+src/test/java/com/hlh/hlhaiagent/demo/
+!src/test/java/com/hlh/hlhaiagent/app/
+
+# 忽略特定敏感测试类
+src/main/java/com/hlh/hlhaiagent/demo/invoke/TestApiKey.java
 
 HELP.md
 target/
@@ -43,5 +54,3 @@ build/
 ### VS Code ###
 .vscode/
 
-# 忽略特定敏感测试类
-src/main/java/com/hlh/hlhaiagent/demo/invoke/TestApiKey.java

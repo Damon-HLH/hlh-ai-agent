@@ -1,17 +1,16 @@
-package com.hlh.hlhaiagent.rag;
+package com.hlh.hlhaiagent.config;
 
-
+import com.hlh.hlhaiagent.rag.LoveAppDocumentLoader;
+import com.zaxxer.hikari.HikariDataSource;
 import jakarta.annotation.Resource;
-import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.pgvector.PgVectorStore;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
-
-import java.util.List;
-
+import javax.sql.DataSource;
 import static org.springframework.ai.vectorstore.pgvector.PgVectorStore.PgDistanceType.COSINE_DISTANCE;
 import static org.springframework.ai.vectorstore.pgvector.PgVectorStore.PgIndexType.HNSW;
 
@@ -24,10 +23,39 @@ public class PGVectorVectorStoreConfig {
     @Resource
     private LoveAppDocumentLoader loveAppDocumentLoader;
 
+    @Value("${app.datasource.pgvector.url}")
+    private String pgUrl;
+
+    @Value("${app.datasource.pgvector.username}")
+    private String pgUsername;
+
+    @Value("${app.datasource.pgvector.password}")
+    private String pgPassword;
+
+    @Value("${app.datasource.pgvector.driver-class-name}")
+    private String pgDriverClassName;
+
     @Bean
-    public VectorStore pgVectorVectorStore(JdbcTemplate jdbcTemplate, EmbeddingModel dashScopeEmbeddingModel) {
+    public DataSource pgVectorDataSource() {
+        HikariDataSource dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl(pgUrl);
+        dataSource.setUsername(pgUsername);
+        dataSource.setPassword(pgPassword);
+        dataSource.setDriverClassName(pgDriverClassName);
+        dataSource.setMaximumPoolSize(5);
+        dataSource.setMinimumIdle(1);
+        return dataSource;
+    }
+
+    @Bean
+    public JdbcTemplate pgVectorJdbcTemplate() {
+        return new JdbcTemplate(pgVectorDataSource());
+    }
+
+    @Bean
+    public VectorStore pgVectorVectorStore(EmbeddingModel dashScopeEmbeddingModel) {
         // 创建PgVectorStore实例，配置向量存储的参数
-        VectorStore vectorStore = PgVectorStore.builder(jdbcTemplate, dashScopeEmbeddingModel)
+        VectorStore vectorStore = PgVectorStore.builder(pgVectorJdbcTemplate(), dashScopeEmbeddingModel)
                 .dimensions(1024)                    // 设置向量的维度，可选，根据embedding的维度
                 .distanceType(COSINE_DISTANCE)       // 设置计算向量间距离的方法，可选，默认为余弦距离
                 .indexType(HNSW)                     // 设置索引类型，可选，默认为HNSW（高效近似最近邻搜索）
