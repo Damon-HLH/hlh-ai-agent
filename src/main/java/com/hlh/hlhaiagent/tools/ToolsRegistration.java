@@ -12,8 +12,11 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ToolsRegistration {
 
-    @Value("${tools.search.api-key}")
+    @Value("${tools.search.searchapi.api-key}")
     private String searchApiKey;
+
+    @Value("${tools.search.google.api-key}")
+    private String googleApiKey;
 
     @Bean
     public ToolCallback[] allTools(){
@@ -23,12 +26,14 @@ public class ToolsRegistration {
         ResourceDownloadTool resourceDownloadTool = new ResourceDownloadTool();
         TerminalOperationTool terminalOperationTool = new TerminalOperationTool();
         PDFGenerationTool pdfGenerationTool = new PDFGenerationTool();
+        GoogleWebSearchTool googleWebSearchTool = new GoogleWebSearchTool(googleApiKey);
         return ToolCallbacks.from(
             fileOperationTool,
-            webSearchTool,
+//            webSearchTool,  用谷歌搜索
             webScrapingTool,
             resourceDownloadTool,
             terminalOperationTool,
+            googleWebSearchTool,
             pdfGenerationTool
         );
     }

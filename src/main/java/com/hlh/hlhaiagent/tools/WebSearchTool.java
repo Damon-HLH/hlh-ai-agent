@@ -19,7 +19,7 @@ public class WebSearchTool {
     // SearchAPI 的搜索接口地址
     private static final String SEARCH_API_URL = "https://www.searchapi.io/api/v1/search";
 
-    @Value("${tools.search.api-key}")
+    @Value("${tools.search.searchapi.api-key}")
     private final String apiKey;
 
     public WebSearchTool(String apiKey) {
