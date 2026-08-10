@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * 集中对的工具注册类
+ * 集中的工具注册类
  */
 @Configuration
 public class ToolsRegistration {

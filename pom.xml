@@ -150,6 +150,13 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Spring Boot Mail Starter -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
+
         <!-- 自动整合PGVector 向量存储-->
 <!--        <dependency>-->
 <!--            <groupId>org.springframework.ai</groupId>-->
