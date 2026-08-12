@@ -25,6 +25,7 @@ import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -90,15 +91,15 @@ public class LoveApp {
         chatClient = ChatClient.builder(dashscopeChatModel)
                 .defaultSystem(SYSTEM_PROMPT)  //系统预设
                 .defaultAdvisors(  //默认拦截器   对所有请求生效
-                        MessageChatMemoryAdvisor.builder(mybatisPlusChatMemory).build(),  //对话记忆 advisor，可更改会话记忆（fileChatMemory，inChatmemory）
+                        MessageChatMemoryAdvisor.builder(inChatmemory).build(),  //对话记忆 advisor，可更改会话记忆（fileChatMemory，inChatmemory）
 //                        // 自定义日志 Advisor，可按需开启
-                        new MyLoggerAdvisor(),
+                        new MyLoggerAdvisor()
 //                        // 自定义推理增强 Advisor，可按需开启 会增加2倍输入token!
 //                        new ReReadingAdvisor()
                         // (官方实现)内容安全顾问 Advisor 敏感词处理
 //                        new SafeGuardAdvisor(SensitiveWords.SENSITIVE_WORDS,"你好，这个问题我暂时无法回答，让我们换个话题再聊聊吧。",0)
                         // 自己实现的敏感词顾问 Advisor
-                        new ProhibitedWordAdvisor()
+//                        new ProhibitedWordAdvisor()
                 ).build();
     }
 
@@ -335,6 +336,38 @@ public class LoveApp {
                 // 向所有已注册的 Advisor 传递运行时参数！！！真正消费的是MessageChatMemoryAdvisor（对话记忆顾问）
                 // 告诉对话记忆 Advisor "这次对话属于哪个会话（chatId）"，这样 Advisor 就能根据这个 ID 找到对应的历史聊天记录，把它拼接到 AI 请求中，从而实现多轮对话的上下文记忆。
                 .toolCallbacks(allTools)
+                .call()
+                .chatResponse();
+        String content = chatResponse.getResult().getOutput().getText();
+        log.info("\n ========== AI 对话记录 ==========\n" +
+                "    会话ID: {}\n" +
+                "    用户输入: {}\n" +
+                "    AI回复: {}\n" +
+                "    ================================",chatId,message,content);
+        return content;
+    }
+
+    // AI 调用 MCP 服务
+
+    // MCP工具回调提供者（它会根据配置文件 mcp-servers.json 自动配置工具到服务中）
+    @Resource
+    private ToolCallbackProvider toolCallbackProvider;
+
+    /**
+     *  AI 恋爱报告功能（调用 MCP 服务）
+     * @param message
+     * @param chatId
+     * @return
+     */
+    public String doChatWithMcp(String message,String chatId){
+        ChatResponse chatResponse = this.chatClient
+                .prompt()
+                .user(message)  //用户提问
+                .advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, chatId)) // 指定会话记忆id，
+                // 向所有已注册的 Advisor 传递运行时参数！！！真正消费的是MessageChatMemoryAdvisor（对话记忆顾问）
+                // 告诉对话记忆 Advisor "这次对话属于哪个会话（chatId）"，这样 Advisor 就能根据这个 ID 找到对应的历史聊天记录，把它拼接到 AI 请求中，从而实现多轮对话的上下文记忆。
+//                .advisors(new MyLoggerAdvisor())
+                .toolCallbacks(toolCallbackProvider)
                 .call()
                 .chatResponse();
         String content = chatResponse.getResult().getOutput().getText();

@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "amap-mcp-server": {
+      "command": "uvx",
+      "args": [
+        "amap-mcp-server"
+      ],
+      "env": {
+        "AMAP_MAPS_API_KEY": "你的高德地图apikey"
+      }
+    },
+    "hlh-image-search-mcp-server": {
+      "command": "java",
+      "args": [
+        "-Dspring.ai.mcp.server.stdio=true",
+        "-Dspring.main.web-application-type=none",
+        "-Dlogging.pattern.console=",
+        "-jar",
+        "hlh-image-search-mcp-server/target/hlh-image-search-mcp-server-0.0.1-SNAPSHOT.jar"
+      ],
+      "env": {}
+    }
+  }
+}
+

@@ -3,6 +3,7 @@ application-local.yml
 tmp
 prohibited-words.txt
 SensitiveWords.java
+api-key.txt
 
 #忽略资源目录
 src/main/resources/document

@@ -1,0 +1,13 @@
+spring:
+  ai:
+    mcp:
+      server:
+        name: hlh-image-search-mcp-server
+        version: 0.0.1
+        type: SYNC
+        # stdio 本地传输
+        stdio: true
+  # stdio 不用启用web端口，因为这里用本地传输
+  main:
+    web-application-type: none
+    banner-mode: off

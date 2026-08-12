@@ -27,6 +27,9 @@ public class ToolsRegistration {
         TerminalOperationTool terminalOperationTool = new TerminalOperationTool();
         PDFGenerationTool pdfGenerationTool = new PDFGenerationTool();
         GoogleWebSearchTool googleWebSearchTool = new GoogleWebSearchTool(googleApiKey);
+        DateTimeTool dateTimeTool = new DateTimeTool();
+        EmailSendingTool emailSendingTool = new EmailSendingTool();
+
         return ToolCallbacks.from(
             fileOperationTool,
 //            webSearchTool,  用谷歌搜索
@@ -34,7 +37,9 @@ public class ToolsRegistration {
             resourceDownloadTool,
             terminalOperationTool,
             googleWebSearchTool,
-            pdfGenerationTool
+            pdfGenerationTool,
+            dateTimeTool,
+            emailSendingTool
         );
     }
 }
