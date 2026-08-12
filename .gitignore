@@ -25,6 +25,13 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+mvnw
+mvnw.cmd
+.gitattributes
+hlh-image-search-mcp-server/mvnw
+hlh-image-search-mcp-server/mvnw.cmd
+hlh-image-search-mcp-server/.gitattributes
+
 ### STS ###
 .apt_generated
 .classpath
