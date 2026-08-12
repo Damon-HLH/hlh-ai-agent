@@ -19,7 +19,7 @@ public class ToolsRegistration {
     private String googleApiKey;
 
     @Bean
-    public ToolCallback[] allTools(){
+    public ToolCallback[] allTools() {
         FileOperationTool fileOperationTool = new FileOperationTool();
         WebSearchTool webSearchTool = new WebSearchTool(searchApiKey);
         WebScrapingTool webScrapingTool = new WebScrapingTool();
@@ -29,17 +29,19 @@ public class ToolsRegistration {
         GoogleWebSearchTool googleWebSearchTool = new GoogleWebSearchTool(googleApiKey);
         DateTimeTool dateTimeTool = new DateTimeTool();
         EmailSendingTool emailSendingTool = new EmailSendingTool();
+        TerminateTool terminateTool = new TerminateTool();
 
         return ToolCallbacks.from(
-            fileOperationTool,
+                fileOperationTool,
 //            webSearchTool,  用谷歌搜索
-            webScrapingTool,
-            resourceDownloadTool,
-            terminalOperationTool,
-            googleWebSearchTool,
-            pdfGenerationTool,
-            dateTimeTool,
-            emailSendingTool
+                webScrapingTool,
+                resourceDownloadTool,
+                terminalOperationTool,
+                googleWebSearchTool,
+                pdfGenerationTool,
+                dateTimeTool,
+                emailSendingTool,
+                terminateTool
         );
     }
 }
