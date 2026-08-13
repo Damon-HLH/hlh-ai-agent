@@ -1,5 +1,6 @@
 package com.hlh.hlhaiagent.agent;
 
+import com.hlh.hlhaiagent.agent.model.AgentState;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +40,9 @@ public abstract class ReActAgent extends BaseAgent {
             // 先思考后行动
             boolean shouldAct = think();
             if (!shouldAct) {
+                // 因为一般情况下，think结果需要有终止工具；agent才会终止会话，并改变状态为结束；
+                // 当think结果不需要工具时，AI也就不需要终止工具来终止会话；即可直接终止行动，让AI来输出结果即可
+//                setState(AgentState.FINISHED);
                 return "思考完成 - 无需行动";
             }
             return act();
