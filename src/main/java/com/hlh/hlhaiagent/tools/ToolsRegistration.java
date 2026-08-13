@@ -1,6 +1,8 @@
 package com.hlh.hlhaiagent.tools;
 
+import jakarta.annotation.Resource;
 import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.tool.ToolCallbacks;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -20,6 +22,10 @@ public class ToolsRegistration {
 
     @Value("${tools.pexels.api-key}")
     private String pexelsApiKey;
+
+    // MCP工具回调提供者（它会根据配置文件 mcp-servers.json 自动配置工具到服务中）
+//    @Resource
+//    private ToolCallbackProvider toolCallbackProvider;
 
     @Bean
     public ToolCallback[] allTools() {
@@ -47,6 +53,7 @@ public class ToolsRegistration {
                 emailSendingTool,
                 imageSearchTool,
                 terminateTool
+//                toolCallbackProvider.getToolCallbacks()  //应该也可以直接将MCP服务中的工具提取出来当做工具，即可实现支持MCP协议的超级智能体
         );
     }
 }
