@@ -5,14 +5,18 @@ import com.hlh.hlhaiagent.agent.model.AgentState;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * 抽象代理基类，用于管理代理状态和执行流程
+ * 抽象代理基类，管理状态和执行流程
  * 提供 状态、内存管理 和 基于步骤的执行循环的基础功能
  * 子类必须实现step方法
  */
@@ -31,6 +35,9 @@ public abstract class BaseAgent {
     // 执行步骤控制
     private int currentStep = 0;
     private int maxSteps = 10;
+
+    //循环检测
+    private int duplicateThreshold = 2;
 
     // LLM 大模型
     private ChatClient chatClient;
@@ -64,11 +71,17 @@ public abstract class BaseAgent {
             for (int i = 0; i < maxSteps && state != AgentState.FINISHED; i++) {
                 int stepNumber = i + 1;
                 currentStep = stepNumber;
-                log.info("Executing step {}/{}", stepNumber, maxSteps);
+                log.info("执行步骤 {}/{}", stepNumber, maxSteps);
                 //单步执行
                 String stepResult = step();
                 String result = "Step " + stepNumber + ": " + stepResult;
                 results.add(result);
+
+                // 检查是否陷入循环  参考OpenManus实现
+                if (isStuck()) {
+                    handleStuckState();
+                    results.add("检测到可能的循环，已添加额外提示以避免重复");
+                }
             }
 
             //检查终止条件
@@ -89,6 +102,80 @@ public abstract class BaseAgent {
     }
 
     /**
+     * 运行代理(流式输出)
+     */
+    public SseEmitter runStream(String userPrompt) {
+        SseEmitter emitter = new SseEmitter(300000L); // 5分钟超时
+
+        CompletableFuture.runAsync(() -> {
+            try {
+                // 校验
+                if (state != AgentState.IDLE || StrUtil.isBlank(userPrompt)) {
+                    String error = "错误: " + (state != AgentState.IDLE ? "无法从状态运行: " + state : "空提示词");
+                    emitter.send(error);
+                    emitter.complete();
+                    return;
+                }
+
+                // 执行
+                state = AgentState.RUNNING;
+                messageList.add(new UserMessage(userPrompt));
+
+                // 步骤循环
+                for (int i = 0; i < maxSteps && state != AgentState.FINISHED; i++) {
+                    currentStep = i + 1;
+                    log.info("执行步骤 {}/{}", currentStep, maxSteps);
+                    String stepResult = step();
+                    String result = "Step " + currentStep + ": " + stepResult;
+                    emitter.send(result);
+
+                    // 检查是否陷入循环  参考OpenManus实现
+                    if (isStuck()) {
+                        handleStuckState();
+                        emitter.send("检测到可能的循环，已添加额外提示以避免重复");
+                    }
+                }
+
+                // 检查终止条件
+                if (currentStep >= maxSteps) {
+                    state = AgentState.FINISHED;
+                    emitter.send("执行结束: 达到最大步骤 (" + maxSteps + ")");
+                }
+
+                emitter.complete();
+            } catch (Exception e) {
+                state = AgentState.ERROR;
+                log.error("执行错误", e);
+                try {
+                    emitter.send("执行错误: " + e.getMessage());
+                    emitter.complete();
+                } catch (IOException ex) {
+                    emitter.completeWithError(ex);
+                }
+            } finally {
+                cleanup();
+            }
+        });
+
+        // 事件处理
+        emitter.onTimeout(() -> {
+            state = AgentState.ERROR;
+            cleanup();
+            log.warn("SSE连接超时");
+        });
+
+        emitter.onCompletion(() -> {
+            if (state == AgentState.RUNNING) {
+                state = AgentState.FINISHED;
+            }
+            cleanup();
+            log.info("SSE连接完成");
+        });
+
+        return emitter;
+    }
+
+    /**
      * 定义单个步骤
      *
      * @return
@@ -102,4 +189,60 @@ public abstract class BaseAgent {
     protected void cleanup() {
         // 子类可以重写此方法来清理资源
     }
+
+    /**
+     * 处理陷入循环的状态
+     */
+    protected void handleStuckState() {
+        String stuckPrompt = "观察到重复响应。请考虑新的策略，避免重复已尝试过的无效路径。";
+        this.nextStepPrompt = stuckPrompt + "\n" + (this.nextStepPrompt != null ? this.nextStepPrompt : "");
+        log.warn("检测到智能体陷入循环状态。添加额外提示: {}", stuckPrompt);
+    }
+
+    /**
+     * 检查代理是否陷入循环
+     *
+     * @return 是否陷入循环
+     */
+    protected boolean isStuck() {
+        if (messageList.size() < 2) {
+            return false;
+        }
+
+        // 获取最后一条助手消息
+        AssistantMessage lastAssistantMessage = null;
+        for (int i = messageList.size() - 1; i >= 0; i--) {
+            if (messageList.get(i) instanceof AssistantMessage) {
+                lastAssistantMessage = (AssistantMessage) messageList.get(i);
+                break;
+            }
+        }
+
+        if (lastAssistantMessage == null || lastAssistantMessage.getText() == null
+                || lastAssistantMessage.getText().isEmpty()) {
+            return false;
+        }
+
+        // 计算重复内容出现次数
+        int duplicateCount = 0;
+        String lastContent = lastAssistantMessage.getText();
+
+        //从倒数第二个开始遍历  如果是助手消息，且消息和最后一条助手消息一致；则发现是陷入循环
+        for (int i = messageList.size() - 2; i >= 0; i--) {
+            Message msg = messageList.get(i);
+            if (msg instanceof AssistantMessage) {
+                AssistantMessage assistantMsg = (AssistantMessage) msg;
+                if (lastContent.equals(assistantMsg.getText())) {
+                    duplicateCount++;
+
+                    if (duplicateCount >= this.duplicateThreshold) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
 }

@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 
 /**
  * 处理工具调用的基础代理类，
- * 具有增强的抽象（具体实现了 think 和 act 方法，可以用于创建实例的父类）
+ * 具有增强的抽象（实现了 think 和 act 方法，可以用于创建实例的父类）
  */
 @EqualsAndHashCode(callSuper = true)
 @Data

@@ -1,18 +1,21 @@
 package com.hlh.hlhaiagent.agent;
 
 import com.hlh.hlhaiagent.advisor.MyLoggerAdvisor;
+import jakarta.annotation.Resource;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.tool.ToolCallback;
+import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.stereotype.Component;
 
 /**
- * hlh的超级智能体，拥有自主规划能力
+ * hlh的超级智能体，具备自主规划能力
  */
 @Component
 public class HlhManus extends ToolCallAgent {
 
-    public HlhManus(ToolCallback[] allTools, ChatModel dashscopeChatModel) {
+
+    public HlhManus(ToolCallback[] allTools, ChatModel dashscopeChatModel /*,ToolCallbackProvider toolCallbackProvider*/) {
         super(allTools);
 
         this.setName("hlhManus");
@@ -36,6 +39,7 @@ public class HlhManus extends ToolCallAgent {
         // 初始化AI对话客户端
         ChatClient chatClient = ChatClient.builder(dashscopeChatModel)
                 .defaultAdvisors(new MyLoggerAdvisor())
+//                .defaultToolCallbacks(toolCallbackProvider)  // 注册远程 MCP 服务
                 .build();
         this.setChatClient(chatClient);
     }

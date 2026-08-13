@@ -18,6 +18,9 @@ public class ToolsRegistration {
     @Value("${tools.search.google.api-key}")
     private String googleApiKey;
 
+    @Value("${tools.pexels.api-key}")
+    private String pexelsApiKey;
+
     @Bean
     public ToolCallback[] allTools() {
         FileOperationTool fileOperationTool = new FileOperationTool();
@@ -30,6 +33,7 @@ public class ToolsRegistration {
         DateTimeTool dateTimeTool = new DateTimeTool();
         EmailSendingTool emailSendingTool = new EmailSendingTool();
         TerminateTool terminateTool = new TerminateTool();
+        ImageSearchTool imageSearchTool = new ImageSearchTool(pexelsApiKey);
 
         return ToolCallbacks.from(
                 fileOperationTool,
@@ -41,6 +45,7 @@ public class ToolsRegistration {
                 pdfGenerationTool,
                 dateTimeTool,
                 emailSendingTool,
+                imageSearchTool,
                 terminateTool
         );
     }
