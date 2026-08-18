@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 /**
  * Spring AI 框架调用 AI 大模型
  */
-@Component  //在springboot 启动时 自动执行
+//@Component  //在springboot 启动时 自动执行
 public class SpringAiAiInvoke implements CommandLineRunner {
     //按名称注入
     @Resource

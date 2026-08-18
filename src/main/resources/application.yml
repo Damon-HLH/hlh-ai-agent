@@ -4,11 +4,12 @@ spring:
   profiles:
     active: local
 server:
-    port: 8123
-    servlet:
-      context-path: /api
+  port: 8123
+  servlet:
+    context-path: /api
 
 # springdoc-aiagent 接口文档配置
+# http://localhost:8123/api/doc.html
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

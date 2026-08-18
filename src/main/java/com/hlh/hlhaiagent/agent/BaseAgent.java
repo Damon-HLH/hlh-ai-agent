@@ -17,7 +17,7 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * 抽象代理基类，管理状态和执行流程
- * 提供 状态、内存管理 和 基于步骤的执行循环的基础功能
+ * 提供 状态转换、内存管理 和 基于步骤的执行循环的基础功能
  * 子类必须实现step方法
  */
 @Data
@@ -107,6 +107,7 @@ public abstract class BaseAgent {
     public SseEmitter runStream(String userPrompt) {
         SseEmitter emitter = new SseEmitter(300000L); // 5分钟超时
 
+        // 使用线程异步处理！ 避免阻塞主线程
         CompletableFuture.runAsync(() -> {
             try {
                 // 校验
@@ -127,6 +128,7 @@ public abstract class BaseAgent {
                     log.info("执行步骤 {}/{}", currentStep, maxSteps);
                     String stepResult = step();
                     String result = "Step " + currentStep + ": " + stepResult;
+                    // 输出当前每一步的结果到 SSE
                     emitter.send(result);
 
                     // 检查是否陷入循环  参考OpenManus实现
@@ -141,7 +143,6 @@ public abstract class BaseAgent {
                     state = AgentState.FINISHED;
                     emitter.send("执行结束: 达到最大步骤 (" + maxSteps + ")");
                 }
-
                 emitter.complete();
             } catch (Exception e) {
                 state = AgentState.ERROR;
@@ -163,7 +164,7 @@ public abstract class BaseAgent {
             cleanup();
             log.warn("SSE连接超时");
         });
-
+        // 设置完成回调
         emitter.onCompletion(() -> {
             if (state == AgentState.RUNNING) {
                 state = AgentState.FINISHED;

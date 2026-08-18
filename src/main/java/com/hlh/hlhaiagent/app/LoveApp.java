@@ -1,7 +1,6 @@
 package com.hlh.hlhaiagent.app;
 
 
-
 import com.hlh.hlhaiagent.advisor.MyLoggerAdvisor;
 import com.hlh.hlhaiagent.advisor.ProhibitedWordAdvisor;
 import com.hlh.hlhaiagent.chatmemory.DatabaseChatMemory;
@@ -30,6 +29,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 
 import java.util.List;
 
@@ -40,7 +40,7 @@ public class LoveApp {
     private static final String SYSTEM_PROMPT = "扮演深耕恋爱心理领域的专家。开场向用户表明身份，告知用户可倾诉恋爱难题帮忙解答。" +
             "围绕单身、恋爱、已婚三种状态提问：单身状态询问社交圈拓展及追求心仪对象的困扰；" +
             "恋爱状态询问沟通、习惯差异引发的矛盾；已婚状态询问家庭责任与亲属关系处理的问题。" +
-            "引导用户详述事情经过、对方反应及自身想法，以便给出专属解决方案。\n" ;
+            "引导用户详述事情经过、对方反应及自身想法，以便给出专属解决方案。\n";
 //            "【恋爱交友推荐功能专项指令】\n" +
 //            "当用户表达找对象、单身交友或请求恋爱对象推荐的意愿时，请按以下流程操作：\n" +
 //            "主动收集用户信息：至少获取 性别、年龄、教育背景、所在城市 这四项关键信息。其他字段（身高、体重、星座、职业、兴趣爱好、收入范围）可选择性询问，若用户不愿提供，允许缺失，后续匹配中忽略缺失字段。\n" +
@@ -59,7 +59,7 @@ public class LoveApp {
 //            "结果不足处理：若匹配人数少于 1 人，如实告知“当前库中匹配人选较少”，并建议用户放宽部分条件（如扩大城市范围或放宽年龄差）后重新查询。\n" +
 //            "附加建议：推荐结束后，可附一句简短的交友破冰建议（如“对方与您同城，或许可以约个咖啡聊聊”），但禁止编造库中不存在的信息。";
 
-      // 1. 构造器注入 ChatClient
+    // 1. 构造器注入 ChatClient
 //    public LoveApp(ChatClient.Builder builder) {
 //        this.chatClient = builder
 //                .defaultSystem("你是恋爱顾问")
@@ -67,10 +67,11 @@ public class LoveApp {
 //    }
 
     // 2. 建造者模式，手动传入 ChatModel 给 ChatClient
+
     /**
      * 初始化 AI 客户端
-     * @param dashscopeChatModel
-     * 入参可以用基于数据库的对话记忆 mybatisPlusChatMemory
+     *
+     * @param dashscopeChatModel 入参可以用基于数据库的对话记忆 mybatisPlusChatMemory
      */
     // 不用官方的 ChatClient.Builder builder 注入 ChatClient
     // 这个 dashscopeChatModel(Spring AI Alibaba) 用于直接注入到 ChatClient 中
@@ -78,14 +79,14 @@ public class LoveApp {
     @Autowired
     public LoveApp(ChatModel dashscopeChatModel, MybatisPlusChatMemory mybatisPlusChatMemory /*, MySQLChatMemory chatMemory*/) {
         //1. 初始化基于文件的对话记忆
-        String fielDir = System.getProperty("user.dir")+ "/tmp/chat-memory";
+        String fielDir = System.getProperty("user.dir") + "/tmp/chat-memory";
         FileBasedChatMemory fileChatMemory = new FileBasedChatMemory(fielDir);
         //2. 初始化基于内存的对话记忆
         MessageWindowChatMemory inChatmemory = MessageWindowChatMemory.builder()
-                                .chatMemoryRepository(new InMemoryChatMemoryRepository())
-                                .maxMessages(20)  //最大记忆窗口为20条
-                                .build();
-        //3. 基于数据库对的对话记忆 用mybatisPlusChatMemory
+                .chatMemoryRepository(new InMemoryChatMemoryRepository())
+                .maxMessages(20)  //最大记忆窗口为20条
+                .build();
+        //3. 基于数据库的对话记忆 用mybatisPlusChatMemory
         //------------------------------------------------
         //创建 SpringAI 会话对象
         chatClient = ChatClient.builder(dashscopeChatModel)
@@ -109,33 +110,34 @@ public class LoveApp {
      * @param loveReportMapper 恋爱报告Mapper
      */
     /**
-//    @Autowired  //默认执行这个构造函数（component只能有一个构造函数 除非用Autowired指定）
-//    public LoveApp(ChatModel dashscopeChatModel, LoveReportMapper loveReportMapper) {
-//        //3.初始化基于数据库的对话记忆
-//        ChatMemory chatMemory = new DatabaseChatMemory(loveReportMapper);
-//        chatClient = ChatClient.builder(dashscopeChatModel)
-//                .defaultSystem(SYSTEM_PROMPT)
-//                .defaultAdvisors(  //默认拦截器   对所有请求生效
-//                        MessageChatMemoryAdvisor.builder(chatMemory).build(),  //对话记忆 advisor
-////                        // 自定义日志 Advisor，可按需开启
-//                        new MyLoggerAdvisor(),
-////                        // 自定义推理增强 Advisor，可按需开启 会增加2倍输入token!
-////                        new ReReadingAdvisor()
-//                        // (官方实现)内容安全顾问 Advisor 敏感词处理
-////                        new SafeGuardAdvisor(SensitiveWords.SENSITIVE_WORDS,"你好，这个问题我暂时无法回答，让我们换个话题再聊聊吧。",0)
-//                        // 自己实现的敏感词顾问 Advisor
-//                        new ProhibitedWordAdvisor()
-//                ).build();
-//    }
-        **/
+     //    @Autowired  //默认执行这个构造函数（component只能有一个构造函数 除非用Autowired指定）
+     //    public LoveApp(ChatModel dashscopeChatModel, LoveReportMapper loveReportMapper) {
+     //        //3.初始化基于数据库的对话记忆
+     //        ChatMemory chatMemory = new DatabaseChatMemory(loveReportMapper);
+     //        chatClient = ChatClient.builder(dashscopeChatModel)
+     //                .defaultSystem(SYSTEM_PROMPT)
+     //                .defaultAdvisors(  //默认拦截器   对所有请求生效
+     //                        MessageChatMemoryAdvisor.builder(chatMemory).build(),  //对话记忆 advisor
+     ////                        // 自定义日志 Advisor，可按需开启
+     //                        new MyLoggerAdvisor(),
+     ////                        // 自定义推理增强 Advisor，可按需开启 会增加2倍输入token!
+     ////                        new ReReadingAdvisor()
+     //                        // (官方实现)内容安全顾问 Advisor 敏感词处理
+     ////                        new SafeGuardAdvisor(SensitiveWords.SENSITIVE_WORDS,"你好，这个问题我暂时无法回答，让我们换个话题再聊聊吧。",0)
+     //                        // 自己实现的敏感词顾问 Advisor
+     //                        new ProhibitedWordAdvisor()
+     //                ).build();
+     //    }
+     **/
 
     /**
      * AI 基础对话（支持多轮对话记忆）
+     *
      * @param message
      * @param chatId
      * @return
      */
-    public String doChat(String message,String chatId){
+    public String doChat(String message, String chatId) {
         ChatResponse chatResponse = this.chatClient
                 .prompt()
                 .user(message)  //用户提问
@@ -147,23 +149,43 @@ public class LoveApp {
         //chatResponse 中还包含 token 等详细信息用于打印
         String content = chatResponse.getResult().getOutput().getText();
         log.info("\n ========== AI 对话记录 ==========\n" +
-            "    会话ID: {}\n" +
-            "    用户输入: {}\n" +
-            "    AI回复: {}\n" +
-            "    ================================",chatId,message,content);
+                "    会话ID: {}\n" +
+                "    用户输入: {}\n" +
+                "    AI回复: {}\n" +
+                "    ================================", chatId, message, content);
         return content;
     }
 
-
-    record LoveReport(String title, List<String> suggestions){}
-
     /**
-     * AI 恋爱报告功能（实战结构化输出）
+     * AI 基础对话（支持多轮对话记忆，SSE流式传输）
+     *
      * @param message
      * @param chatId
      * @return
      */
-    public LoveReport doChatWithReport(String message,String chatId){
+    public Flux<String> doChatByStream(String message, String chatId) {
+        return this.chatClient
+                .prompt()
+                .user(message)  //用户提问
+                .advisors(advisor -> advisor.param(ChatMemory.CONVERSATION_ID, chatId)) // 指定会话记忆id
+                // 向所有已注册的 Advisor 传递运行时参数！！！真正消费的是MessageChatMemoryAdvisor（对话记忆顾问）
+                // 告诉对话记忆 Advisor "这次对话属于哪个会话（chatId）"，这样 Advisor 就能根据这个 ID 找到对应的历史聊天记录，把它拼接到 AI 请求中，从而实现多轮对话的上下文记忆。
+                .stream()
+                .content();
+//        content.subscribe(System.out::println);//订阅这个 AI 流式响应，每当流中有一个新的文字片段到达时，就立即打印到控制台。return content;
+    }
+
+    record LoveReport(String title, List<String> suggestions) {
+    }
+
+    /**
+     * AI 恋爱报告功能（实战结构化输出）
+     *
+     * @param message
+     * @param chatId
+     * @return
+     */
+    public LoveReport doChatWithReport(String message, String chatId) {
         LoveReport loveReport = this.chatClient
                 .prompt()
                 .system(SYSTEM_PROMPT + "每次对话后都要生成恋爱结果，标题为{用户名}的恋爱报告，内容为建议列表。")
@@ -177,17 +199,18 @@ public class LoveApp {
         return loveReport;
     }
 
-    // AI 恋爱知识库问答功能
+    // AI 恋爱知识库问答功能(本地加载文档，创建简易向量数据库存储文档)
     @Resource
     private VectorStore loveAppVectorStore;
 
     /**
      * 和 RAG 本地知识库进行对话
+     *
      * @param message
      * @param chatId
      * @return
      */
-    public String doChatWithVectorStoreLocal(String message,String chatId){
+    public String doChatWithVectorStoreLocal(String message, String chatId) {
         ChatResponse chatResponse = this.chatClient
                 .prompt()
                 .user(message)
@@ -204,20 +227,21 @@ public class LoveApp {
                 "    会话ID: {}\n" +
                 "    用户输入: {}\n" +
                 "    AI回复: {}\n" +
-                "    ================================",chatId,message,content);
+                "    ================================", chatId, message, content);
         return content;
     }
 
     @Resource
     private Advisor loveAppRagCloudAdvisor;
 
-     /**
+    /**
      * 和 RAG 阿里云知识库进行对话
+     *
      * @param message
      * @param chatId
      * @return
      */
-    public String doChatWithRagCloud(String message,String chatId){
+    public String doChatWithRagCloud(String message, String chatId) {
         ChatResponse chatResponse = this.chatClient
                 .prompt()
                 .user(message)
@@ -227,7 +251,7 @@ public class LoveApp {
 
                 // 应用 RAG 知识库问答（本地加载文档，创建简易向量数据库存储文档）
 //                .advisors(QuestionAnswerAdvisor.builder(loveAppVectorStore).build())
-                // 应用 RAG 检索增强服务（基于云知识库服务）
+                // 应用 RAG 检索增强服务（基于阿里云百炼中的知识库服务）
                 .advisors(loveAppRagCloudAdvisor)
                 .call()
                 .chatResponse();
@@ -236,7 +260,7 @@ public class LoveApp {
                 "    会话ID: {}\n" +
                 "    用户输入: {}\n" +
                 "    AI回复: {}\n" +
-                "    ================================",chatId,message,content);
+                "    ================================", chatId, message, content);
         return content;
     }
 
@@ -246,11 +270,12 @@ public class LoveApp {
     /**
      * 和 RAG 阿里云 pgVector 知识库进行对话(运用 RAG 检索增强服务)
      * 手动配置向量数据库连接并存储文档
+     *
      * @param message
      * @param chatId
      * @return
      */
-    public String doChatWithRagCloudEnhanced(String message,String chatId){
+    public String doChatWithRagCloudEnhanced(String message, String chatId) {
         ChatResponse chatResponse = this.chatClient
                 .prompt()
                 .user(message)
@@ -271,25 +296,26 @@ public class LoveApp {
                 "    会话ID: {}\n" +
                 "    用户输入: {}\n" +
                 "    AI回复: {}\n" +
-                "    ================================",chatId,message,content);
+                "    ================================", chatId, message, content);
         return content;
     }
 
     @Resource
-    private QueryRewriter queryRewriter;
+    private QueryRewriter queryRewriter; //查询重写器
 
     /**
      * 和 RAG 本地知识库进行对话
      * 增加功能：
      * 1. 查询改写：将用户提示进行改写查询，提高搜索的质量
      * 2. 增加一个自定义的 RAG 检索增强服务
-     *    文档查询器：包括自定义条件过滤(比如文档元数据限制 status)，相似度阈值，返回文档数量，
-     *    上下文增强：（如果没找到相关文档，则返回友好提示）
+     * 文档查询器：包括自定义条件过滤(比如文档元数据限制 status)，相似度阈值，返回文档数量，
+     * 上下文增强：（如果没找到相关文档，则返回友好提示）
+     *
      * @param message
      * @param chatId
      * @return
      */
-    public String doChatWithRewriteEnhanced(String message,String chatId){
+    public String doChatWithRewriteEnhanced(String message, String chatId) {
         String rewritenMessage = queryRewriter.doQueryRewrite(message); //查询改写，利用ai改写用户提示
         ChatResponse chatResponse = this.chatClient
                 .prompt()
@@ -313,7 +339,7 @@ public class LoveApp {
                 "    会话ID: {}\n" +
                 "    用户输入: {}\n" +
                 "    AI回复: {}\n" +
-                "    ================================",chatId,message,content);
+                "    ================================", chatId, message, content);
         return content;
     }
 
@@ -323,12 +349,13 @@ public class LoveApp {
     private ToolCallback[] allTools;
 
     /**
-     *  AI 恋爱报告功能（支持调用工具）
+     * AI 恋爱报告功能（支持调用工具）
+     *
      * @param message
      * @param chatId
      * @return
      */
-    public String doChatWithTools(String message,String chatId){
+    public String doChatWithTools(String message, String chatId) {
         ChatResponse chatResponse = this.chatClient
                 .prompt()
                 .user(message)  //用户提问
@@ -343,7 +370,7 @@ public class LoveApp {
                 "    会话ID: {}\n" +
                 "    用户输入: {}\n" +
                 "    AI回复: {}\n" +
-                "    ================================",chatId,message,content);
+                "    ================================", chatId, message, content);
         return content;
     }
 
@@ -354,12 +381,13 @@ public class LoveApp {
     private ToolCallbackProvider toolCallbackProvider;
 
     /**
-     *  AI 恋爱报告功能（调用 MCP 服务）
+     * AI 恋爱报告功能（调用 MCP 服务）
+     *
      * @param message
      * @param chatId
      * @return
      */
-    public String doChatWithMcp(String message,String chatId){
+    public String doChatWithMcp(String message, String chatId) {
         ChatResponse chatResponse = this.chatClient
                 .prompt()
                 .user(message)  //用户提问
@@ -375,7 +403,7 @@ public class LoveApp {
                 "    会话ID: {}\n" +
                 "    用户输入: {}\n" +
                 "    AI回复: {}\n" +
-                "    ================================",chatId,message,content);
+                "    ================================", chatId, message, content);
         return content;
     }
 }

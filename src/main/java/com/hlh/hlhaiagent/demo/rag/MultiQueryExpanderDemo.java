@@ -13,7 +13,7 @@ import java.util.List;
  * 多查询扩展 demo
  * 将 用户输入 通过 ai 扩充为多个不同表达的查询，便于搜索RAG知识库
  */
-@Component
+//@Component
 public class MultiQueryExpanderDemo {
 
     private final ChatClient.Builder chatClientBuilder;
@@ -22,11 +22,11 @@ public class MultiQueryExpanderDemo {
         this.chatClientBuilder = ChatClient.builder(dashScopeChatModel);
     }
 
-    public List<Query> expend(String query){
+    public List<Query> expend(String query) {
         MultiQueryExpander queryExpander = MultiQueryExpander.builder()
-                                            .chatClientBuilder(chatClientBuilder)
-                                            .numberOfQueries(3)
-                                            .build();
+                .chatClientBuilder(chatClientBuilder)
+                .numberOfQueries(3)
+                .build();
         List<Query> queries = queryExpander.expand(new Query(query));
         return queries;
     }

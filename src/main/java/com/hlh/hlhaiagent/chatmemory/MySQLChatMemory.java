@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
  * MySQL实现的对话记忆-- jdbc直连，没有用mybatis
  * 将对话内容持久化到MySQL数据库
  */
-@Component
+//@Component
 @Slf4j
 public class MySQLChatMemory implements ChatMemory {
 
@@ -88,8 +88,8 @@ public class MySQLChatMemory implements ChatMemory {
         Object[] params;
 
         sql = "SELECT message_json, message_type, content FROM chatmemory " +
-                    "WHERE conversation_id = ? AND is_delete = 0 ORDER BY message_order DESC";
-        params = new Object[] { conversationId };
+                "WHERE conversation_id = ? AND is_delete = 0 ORDER BY message_order DESC";
+        params = new Object[]{conversationId};
 
         List<Message> messages = executeMessageQuery(sql, params);
         log.info("从会话 {} 中检索到 {} 条消息", conversationId, messages.size());
@@ -123,7 +123,7 @@ public class MySQLChatMemory implements ChatMemory {
         // 将物理删除改为逻辑删除
         String sql = "UPDATE chatmemory SET is_delete = 1, update_time = ? WHERE conversation_id = ? AND is_delete = 0";
         Timestamp now = Timestamp.valueOf(LocalDateTime.now());
-        Object[] params = new Object[] { now, conversationId };
+        Object[] params = new Object[]{now, conversationId};
 
         int count = jdbcTemplate.update(sql, params);
         log.info("从会话 {} 中逻辑删除 {} 条消息", conversationId, count);
@@ -184,11 +184,11 @@ public class MySQLChatMemory implements ChatMemory {
         log.info("SQL: {}, 参数: {}", sql, Arrays.toString(params));
 
         return jdbcTemplate.query(sql, params, (rs, rowNum) -> {
-            String messageJson = rs.getString("message_json");
-            String messageType = rs.getString("message_type");
-            String content = rs.getString("content");
-            return deserializeMessage(messageJson, messageType, content);
-        }).stream()
+                    String messageJson = rs.getString("message_json");
+                    String messageType = rs.getString("message_type");
+                    String content = rs.getString("content");
+                    return deserializeMessage(messageJson, messageType, content);
+                }).stream()
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
