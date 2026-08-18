@@ -97,7 +97,7 @@ public class AiController {
      * @return
      */
     @GetMapping("/manus/chat")
-    public SseEmitter doChatWihManus(String message) {
+    public SseEmitter doChatWithManus(String message) {
         HlhManus hlhManus = new HlhManus(allTools, dashscopeChatModel);
         return hlhManus.runStream(message);
     }
