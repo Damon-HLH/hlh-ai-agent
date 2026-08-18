@@ -2,16 +2,22 @@
   <div class="chat-page">
     <header class="chat-header">
       <div class="header-inner">
-        <a-button class="back-btn" shape="circle" size="small" @click="$router.push('/')">
-          <template #icon>
-            <icon-left />
-          </template>
-        </a-button>
+        <slot name="header-icon"></slot>
         <div class="header-info">
           <h1 class="header-title">{{ title }}</h1>
           <p class="header-subtitle">{{ subtitle }}</p>
         </div>
-        <slot name="header-extra"></slot>
+        <a-button
+          class="clear-btn"
+          size="small"
+          :disabled="streaming || messages.length === 0"
+          @click="$emit('clear')"
+        >
+          <template #icon>
+            <icon-delete />
+          </template>
+          清除记录
+        </a-button>
       </div>
     </header>
 
@@ -88,7 +94,7 @@ export default {
     messages: { type: Array, default: () => [] },
     streaming: { type: Boolean, default: false }
   },
-  emits: ['send'],
+  emits: ['send', 'clear'],
   setup(props, { emit }) {
     const inputText = ref('')
     const listRef = ref(null)
@@ -192,7 +198,7 @@ export default {
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: 100vh;
+  height: 100%;
   background: var(--chat-bg, #f7f8fa);
 }
 
@@ -213,13 +219,25 @@ export default {
   padding: 14px 20px;
 }
 
-.back-btn {
-  flex: none;
-  color: var(--chat-primary, #4080ff);
+.header-info {
+  flex: 1;
+  min-width: 0;
 }
 
-.header-info {
-  min-width: 0;
+/* 清除记录按钮：跟随主题色 */
+.clear-btn.arco-button {
+  flex: none;
+  margin-left: 12px;
+  border-radius: 8px;
+  color: var(--chat-primary, #4080ff);
+  border-color: var(--chat-primary, #4080ff);
+  background: transparent;
+}
+
+.clear-btn.arco-button:hover:not(.arco-button-disabled) {
+  color: var(--chat-primary, #4080ff);
+  border-color: var(--chat-primary, #4080ff);
+  background: var(--chat-welcome-bg, rgba(64, 128, 255, 0.08));
 }
 
 .header-title {
@@ -255,10 +273,28 @@ export default {
 }
 
 .empty-tip {
-  padding: 64px 20px;
-  text-align: center;
-  color: #a3aab9;
+  max-width: 560px;
+  margin: 6vh auto 0;
+  padding: 30px 34px;
+  background: var(--chat-welcome-bg, rgba(255, 255, 255, 0.9));
+  border: 1px solid rgba(150, 160, 180, 0.1);
+  border-radius: 18px;
+  box-shadow: 0 4px 20px rgba(31, 41, 55, 0.05);
+  text-align: left;
+  color: #4a5164;
   font-size: 14px;
+  animation: welcome-in 0.4s ease both;
+}
+
+@keyframes welcome-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .back-latest {
@@ -338,6 +374,10 @@ export default {
 
   .header-title {
     font-size: 15px;
+  }
+
+  .clear-btn.arco-button :deep(span:not(.arco-icon)) {
+    display: none;
   }
 
   .chat-inner {

@@ -4,6 +4,12 @@ import { Message } from '@arco-design/web-vue'
 let seed = 0
 const genId = () => `msg-${Date.now()}-${++seed}`
 
+// 消息时间戳，格式 HH:mm
+const nowTime = () => {
+  const d = new Date()
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
 /**
  * 通用聊天逻辑组合式函数
  * @param {Function} sendFn 发送函数，接收 (content, handlers)，返回 Promise
@@ -26,8 +32,8 @@ export function useChat(sendFn, options = {}) {
     }
 
     messages.value.push(
-      { id: genId(), role: 'user', content, status: 'sending' },
-      { id: genId(), role: 'ai', content: '', status: 'pending' }
+      { id: genId(), role: 'user', content, status: 'sending', time: nowTime() },
+      { id: genId(), role: 'ai', content: '', status: 'pending', time: nowTime() }
     )
     // 注意：必须通过响应式数组取出代理对象再修改，直接改原始对象不会触发视图更新
     const userMsg = messages.value[messages.value.length - 2]

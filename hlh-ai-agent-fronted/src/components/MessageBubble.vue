@@ -24,6 +24,10 @@
         />
         <icon-exclamation-circle v-else-if="message.status === 'error'" class="status-icon error" />
         <span v-if="statusText" class="status-text">{{ statusText }}</span>
+        <span v-if="message.time" class="msg-time">{{ message.time }}</span>
+      </div>
+      <div v-else-if="message.time && message.status !== 'pending'" class="status-line ai">
+        <span class="msg-time">{{ message.time }}</span>
       </div>
     </div>
   </div>
@@ -164,6 +168,15 @@ export default {
   margin-top: 4px;
   font-size: 12px;
   color: #9aa1b2;
+}
+
+.status-line.ai {
+  justify-content: flex-start;
+}
+
+.msg-time {
+  color: #b6bcc9;
+  margin-left: 2px;
 }
 
 .status-icon.sending {
