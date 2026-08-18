@@ -61,6 +61,9 @@ public class PDFGenerationTool {
     // 字体文件字节缓存（避免每次生成PDF都重复读取字体资源）
     private static final Map<String, byte[]> FONT_BYTES_CACHE = new ConcurrentHashMap<>();
 
+    // 标记中文字体是否成功加载
+    private static boolean chineseFontLoaded = false;
+
     // 系统字体候选路径（内置字体缺失时的回退方案；注意微软雅黑/宋体有版权，不可随应用分发，仅可运行时引用）
     private static final String[] CJK_FONT_CANDIDATES = {
             "C:/Windows/Fonts/msyh.ttc,0",
@@ -99,10 +102,14 @@ public class PDFGenerationTool {
         content = sanitizeContent(content);
 
         // 创建 PdfWriter 和 PdfDocument 对象
+        // 用局部变量记录字体警告状态（chineseFontLoaded 是 static 字段，并发场景下不可靠）
+        boolean fontWarningNeeded = false;
+
         try (PdfWriter writer = new PdfWriter(filePath);
              PdfDocument pdf = new PdfDocument(writer);
              Document document = new Document(pdf)) {
             // 加载中文字体（优先内置字体，回退系统字体，最终兜底STSong）
+            chineseFontLoaded = false;
             PdfFont font = createCjkFont(EMBEDDED_FONT_PATH, CJK_FONT_CANDIDATES);
             PdfFont boldFont = createCjkFont(EMBEDDED_BOLD_FONT_PATH, CJK_BOLD_FONT_CANDIDATES);
             if (boldFont == null) {
@@ -111,11 +118,52 @@ public class PDFGenerationTool {
             document.setFont(font);
             document.setFontSize(11f);
 
-            processContent(content, document, font, boldFont);
-            return "PDF生成成功，保存路径: " + filePath;
+            // 如果内容为空，添加默认内容
+            if (content == null || content.trim().isEmpty()) {
+                Paragraph emptyWarning = new Paragraph("未提供内容，PDF已创建但内容为空。");
+                emptyWarning.setFont(font).setFontSize(14);
+                document.add(emptyWarning);
+            } else {
+                // 检查中文字体是否正确加载，如果没有加载，给出提示
+                if (!chineseFontLoaded) {
+                    fontWarningNeeded = true;
+                    Paragraph fontWarning = new Paragraph("注意：无法加载中文字体，文档中的中文可能无法正确显示。");
+                    fontWarning.setFont(font).setFontSize(14);
+                    document.add(fontWarning);
+                    document.add(new Paragraph("\n"));
+                }
+
+                // 处理内容
+                processContent(content, document, font, boldFont);
+            }
+
+        } catch (IOException e) {
+            log.error("生成PDF时出错", e);
+            return "生成PDF时出错: " + e.getMessage() + "\n请检查是否需要安装中文字体，或将中文字体文件(.ttc/.ttf)复制到resources/fonts/目录下。";
         } catch (Exception e) {
-            log.error("生成PDF失败: {}", filePath, e);
-            return "生成PDF时出错: " + e.getClass().getSimpleName() + " - " + e.getMessage();
+            log.error("PDF生成过程中发生未知错误", e);
+            return "PDF生成过程中发生未知错误: " + e.getMessage();
+        }
+
+        // try-with-resources 结束后，PdfWriter 已 close 并 flush 缓冲到磁盘，此时校验文件才有效
+        if (FileUtil.exist(filePath) && FileUtil.size(new java.io.File(filePath)) > 0) {
+            // 创建下载链接
+            String pdfFileName = new java.io.File(filePath).getName();
+            String downloadUrl = "/api/files/pdf/" + pdfFileName;
+
+            StringBuilder result = new StringBuilder();
+            result.append("PDF生成成功！\n");
+            result.append("- 文件名: ").append(pdfFileName).append("\n");
+            result.append("- 本地路径: ").append(filePath).append("\n");
+            result.append("- 下载链接: [点击下载PDF](").append(downloadUrl).append(")\n");
+
+            if (fontWarningNeeded) {
+                result.append("\n 注意：未能加载中文字体，PDF中的中文可能无法正确显示。");
+            }
+
+            return result.toString();
+        } else {
+            return "PDF文件创建失败或为空文件: " + filePath;
         }
     }
 
@@ -146,8 +194,10 @@ public class PDFGenerationTool {
         byte[] fontBytes = loadFontResource(embeddedResourcePath);
         if (fontBytes != null) {
             try {
-                return PdfFontFactory.createFont(fontBytes, PdfEncodings.IDENTITY_H,
+                PdfFont font = PdfFontFactory.createFont(fontBytes, PdfEncodings.IDENTITY_H,
                         PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED);
+                chineseFontLoaded = true;
+                return font;
             } catch (Exception e) {
                 log.warn("加载内置字体失败，尝试系统字体: {}", embeddedResourcePath, e);
             }
@@ -160,8 +210,10 @@ public class PDFGenerationTool {
                 continue;
             }
             try {
-                return PdfFontFactory.createFont(candidate, PdfEncodings.IDENTITY_H,
+                PdfFont font = PdfFontFactory.createFont(candidate, PdfEncodings.IDENTITY_H,
                         PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED);
+                chineseFontLoaded = true;
+                return font;
             } catch (Exception e) {
                 log.warn("加载字体失败，尝试下一个候选字体: {}", candidate, e);
             }
@@ -169,6 +221,7 @@ public class PDFGenerationTool {
         // 3. 兜底：使用itext-asian提供的内置中文字体（仅支持BMP字符，emoji已被预先清洗）
         try {
             log.warn("内置字体与系统字体均不可用，回退到STSongStd-Light内置CMap字体");
+            chineseFontLoaded = true;
             return PdfFontFactory.createFont("STSongStd-Light", "UniGB-UCS2-H");
         } catch (IOException e) {
             throw new IllegalStateException("没有可用的中文字体", e);

@@ -40,6 +40,7 @@ public class ToolsRegistration {
         EmailSendingTool emailSendingTool = new EmailSendingTool();
         TerminateTool terminateTool = new TerminateTool();
         ImageSearchTool imageSearchTool = new ImageSearchTool(pexelsApiKey);
+        HtmlGenerationTool htmlGenerationTool = new HtmlGenerationTool();
 
         return ToolCallbacks.from(
                 fileOperationTool,
@@ -52,6 +53,7 @@ public class ToolsRegistration {
                 dateTimeTool,
                 emailSendingTool,
                 imageSearchTool,
+                htmlGenerationTool,
                 terminateTool
 //                toolCallbackProvider.getToolCallbacks()  //应该也可以直接将MCP服务中的工具提取出来当做工具，即可实现支持MCP协议的超级智能体
         );

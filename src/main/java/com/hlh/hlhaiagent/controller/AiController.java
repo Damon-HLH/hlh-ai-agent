@@ -4,7 +4,6 @@ package com.hlh.hlhaiagent.controller;
 import com.hlh.hlhaiagent.agent.HlhManus;
 import com.hlh.hlhaiagent.app.LoveApp;
 import jakarta.annotation.Resource;
-
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.http.MediaType;

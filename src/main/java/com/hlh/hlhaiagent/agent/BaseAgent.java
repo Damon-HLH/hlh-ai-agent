@@ -2,6 +2,7 @@ package com.hlh.hlhaiagent.agent;
 
 import cn.hutool.core.util.StrUtil;
 import com.hlh.hlhaiagent.agent.model.AgentState;
+import com.hlh.hlhaiagent.tools.GoogleWebSearchTool;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -188,6 +189,9 @@ public abstract class BaseAgent {
      * 清理资源
      */
     protected void cleanup() {
+        // 重置WebSearchTool的搜索次数计数器
+        GoogleWebSearchTool.resetSearchCallCount();
+        log.debug("清理资源：已重置WebSearchTool的搜索次数计数器");
         // 子类可以重写此方法来清理资源
     }
 
