@@ -7,6 +7,7 @@ import com.hlh.hlhaiagent.chatmemory.DatabaseChatMemory;
 import com.hlh.hlhaiagent.chatmemory.FileBasedChatMemory;
 import com.hlh.hlhaiagent.chatmemory.MySQLChatMemory;
 import com.hlh.hlhaiagent.chatmemory.MybatisPlusChatMemory;
+import com.hlh.hlhaiagent.config.PGVectorVectorStoreConfig;
 import com.hlh.hlhaiagent.mapper.LoveReportMapper;
 import com.hlh.hlhaiagent.rag.LoveAppRagCloudAdvisorConfig;
 import com.hlh.hlhaiagent.rag.LoveAppRagCustomAdvisorFactory;
@@ -199,17 +200,35 @@ public class LoveApp {
         return loveReport;
     }
 
-    // AI 恋爱知识库问答功能(本地加载文档，创建简易向量数据库存储文档)
-    @Resource
-    private VectorStore loveAppVectorStore;
+    // ==================== RAG 知识库问答相关（临时禁用） ====================
+    // 【临时禁用说明】以下 3 种 RAG 知识库问答方式仅供学习测试时使用。
+    // 当前 AiController 中未调用任何 RAG 功能，为避免启动时加载文档、连接数据库和调用 Embedding API 产生费用，暂时注释掉。
+    // 如需重新启用：
+    //   1. 恢复 LoveAppSimpleVectorConfig / PGVectorVectorStoreConfig / LoveAppRagCloudAdvisorConfig 中的 @Configuration 注解
+    //   2. 取消下方 @Resource 字段的注释
+    //   3. 取消下方 RAG 方法的注释
+
+    // 1.本地加载文档，创建简易向量数据库存储文档
+    //需要按需开启  LoveAppSimpleVectorConfig
+//    @Resource
+//    private VectorStore loveAppVectorStore;
+    // 2.加载阿里云百炼知识库功能
+//    @Resource
+//    private Advisor loveAppRagCloudAdvisor;
+    // 3.和 RAG 阿里云 pgVector 知识库进行对话
+    //需要按需开启 PGVectorVectorStoreConfig
+//    @Resource
+//    private VectorStore pgVectorVectorStore;
+    // ==================== RAG 知识库问答相关 结束 ====================
 
     /**
-     * 和 RAG 本地知识库进行对话
+     *  1.和 RAG 本地知识库进行对话
      *
      * @param message
      * @param chatId
      * @return
      */
+    /*
     public String doChatWithVectorStoreLocal(String message, String chatId) {
         ChatResponse chatResponse = this.chatClient
                 .prompt()
@@ -218,7 +237,7 @@ public class LoveApp {
                 // 向所有已注册的 Advisor 传递运行时参数！！！真正消费的是MessageChatMemoryAdvisor（对话记忆顾问）
                 // 告诉对话记忆 Advisor "这次对话属于哪个会话（chatId）"，这样 Advisor 就能根据这个 ID 找到对应的历史聊天记录，把它拼接到 AI 请求中，从而实现多轮对话的上下文记忆。
 
-                // 应用 RAG 知识库问答（本地加载文档，创建简易向量数据库存储文档）
+                // 1.应用 RAG 知识库问答（本地加载文档，创建简易向量数据库存储文档）
                 .advisors(QuestionAnswerAdvisor.builder(loveAppVectorStore).build())
                 .call()
                 .chatResponse();
@@ -230,17 +249,16 @@ public class LoveApp {
                 "    ================================", chatId, message, content);
         return content;
     }
-
-    @Resource
-    private Advisor loveAppRagCloudAdvisor;
+    */
 
     /**
-     * 和 RAG 阿里云知识库进行对话
+     * 和 RAG 阿里云百炼知识库进行对话
      *
      * @param message
      * @param chatId
      * @return
      */
+    /*
     public String doChatWithRagCloud(String message, String chatId) {
         ChatResponse chatResponse = this.chatClient
                 .prompt()
@@ -249,9 +267,9 @@ public class LoveApp {
                 // 向所有已注册的 Advisor 传递运行时参数！！！真正消费的是MessageChatMemoryAdvisor（对话记忆顾问）
                 // 告诉对话记忆 Advisor "这次对话属于哪个会话（chatId）"，这样 Advisor 就能根据这个 ID 找到对应的历史聊天记录，把它拼接到 AI 请求中，从而实现多轮对话的上下文记忆。
 
-                // 应用 RAG 知识库问答（本地加载文档，创建简易向量数据库存储文档）
+                // 1.应用 RAG 知识库问答（本地加载文档，创建简易向量数据库存储文档）
 //                .advisors(QuestionAnswerAdvisor.builder(loveAppVectorStore).build())
-                // 应用 RAG 检索增强服务（基于阿里云百炼中的知识库服务）
+                // 2.应用 RAG 检索增强服务（基于阿里云百炼中的知识库服务）
                 .advisors(loveAppRagCloudAdvisor)
                 .call()
                 .chatResponse();
@@ -263,18 +281,19 @@ public class LoveApp {
                 "    ================================", chatId, message, content);
         return content;
     }
-
-    @Resource
-    private VectorStore pgVectorVectorStore;
+     */
 
     /**
-     * 和 RAG 阿里云 pgVector 知识库进行对话(运用 RAG 检索增强服务)
+     * 3.和 RAG 阿里云 pgVector 知识库进行对话(运用 RAG 检索增强服务)
      * 手动配置向量数据库连接并存储文档
+     *
+     * 【临时禁用】依赖 pgVectorVectorStore，需恢复 RAG 配置后取消注释
      *
      * @param message
      * @param chatId
      * @return
      */
+    /*
     public String doChatWithRagCloudEnhanced(String message, String chatId) {
         ChatResponse chatResponse = this.chatClient
                 .prompt()
@@ -283,11 +302,12 @@ public class LoveApp {
                 // 向所有已注册的 Advisor 传递运行时参数！！！真正消费的是MessageChatMemoryAdvisor（对话记忆顾问）
                 // 告诉对话记忆 Advisor "这次对话属于哪个会话（chatId）"，这样 Advisor 就能根据这个 ID 找到对应的历史聊天记录，把它拼接到 AI 请求中，从而实现多轮对话的上下文记忆。
 
-                // 应用 RAG 知识库问答（本地加载文档，创建简易向量数据库存储文档）
+                // 3种 RAG 知识库使用方式，第三种最完整且依赖阿里云购买的PostrelSQL知识库
+                // 1.应用 RAG 知识库问答（本地加载文档，创建简易向量数据库存储文档）
 //                .advisors(QuestionAnswerAdvisor.builder(loveAppVectorStore).build())
-                // 应用 RAG 检索增强服务（基于云知识库服务）
+                // 2.应用 RAG 检索增强服务（基于云知识库服务）
 //                .advisors(loveAppRagCloudAdvisor)
-                // 应用 RAG 检索增强服务（基于 pgVector 向量存储）
+                // 3.应用 RAG 检索增强服务（基于 pgVector 向量存储）
                 .advisors(QuestionAnswerAdvisor.builder(pgVectorVectorStore).build())
                 .call()
                 .chatResponse();
@@ -299,9 +319,10 @@ public class LoveApp {
                 "    ================================", chatId, message, content);
         return content;
     }
+    */
 
-    @Resource
-    private QueryRewriter queryRewriter; //查询重写器
+//    @Resource
+//    private QueryRewriter queryRewriter; //查询重写器（仅用于 RAG 方法 doChatWithRewriteEnhanced，临时禁用）
 
     /**
      * 和 RAG 本地知识库进行对话
@@ -310,13 +331,16 @@ public class LoveApp {
      * 2. 增加一个自定义的 RAG 检索增强服务
      * 文档查询器：包括自定义条件过滤(比如文档元数据限制 status)，相似度阈值，返回文档数量，
      * 上下文增强：（如果没找到相关文档，则返回友好提示）
+     * <p>
+     * 【临时禁用】依赖 loveAppVectorStore 和 queryRewriter，需恢复 RAG 配置后取消注释
      *
      * @param message
      * @param chatId
      * @return
      */
+    /*
     public String doChatWithRewriteEnhanced(String message, String chatId) {
-        String rewritenMessage = queryRewriter.doQueryRewrite(message); //查询改写，利用ai改写用户提示
+        String rewritenMessage = queryRewriter.doQueryRewrite(message); //查询改写，利用AI改写用户提示
         ChatResponse chatResponse = this.chatClient
                 .prompt()
                 .user(rewritenMessage)
@@ -324,11 +348,11 @@ public class LoveApp {
                 // 向所有已注册的 Advisor 传递运行时参数！！！真正消费的是MessageChatMemoryAdvisor（对话记忆顾问）
                 // 告诉对话记忆 Advisor "这次对话属于哪个会话（chatId）"，这样 Advisor 就能根据这个 ID 找到对应的历史聊天记录，把它拼接到 AI 请求中，从而实现多轮对话的上下文记忆。
 
-                // 应用 RAG 知识库问答（本地加载文档，创建简易向量数据库存储文档）
+                // 1.应用 RAG 知识库问答（本地加载文档，创建简易向量数据库存储文档）
 //                .advisors(QuestionAnswerAdvisor.builder(loveAppVectorStore).build())
-                // 应用 RAG 检索增强服务（基于云知识库服务）
+                // 2.应用 RAG 检索增强服务（基于云知识库服务）
 //                .advisors(loveAppRagCloudAdvisor)
-                // 应用 RAG 检索增强服务（基于 PgVector 向量存储）
+                // 3，应用 RAG 检索增强服务（基于 PgVector 向量存储）
 //                .advisors(QuestionAnswerAdvisor.builder(pgVectorVectorStore).build())
                 // 应用自定义的 RAG 检索增强服务（文档查询器 + 上下文增强）！！！
                 .advisors(LoveAppRagCustomAdvisorFactory.createLoveAppRagCustomAdvisor(loveAppVectorStore, "单身"))  //限制只在知识库中搜索 status标签 = 单身 的文档
@@ -342,6 +366,7 @@ public class LoveApp {
                 "    ================================", chatId, message, content);
         return content;
     }
+    */
 
 
     // AI 调用工具能力

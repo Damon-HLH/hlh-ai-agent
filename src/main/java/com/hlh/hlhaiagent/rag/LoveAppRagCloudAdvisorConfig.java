@@ -15,10 +15,15 @@ import org.springframework.context.annotation.Configuration;
 /**
  * 自定义基于阿里云知识库服务的 RAG 增强顾问
  * 用于初始化基于阿里云知识库服务的 RAG 增强顾问 Bean
+ *
+ * 【临时禁用说明】
+ * 此配置类用于连接阿里云百炼知识库服务，启动时会初始化知识库检索顾问。
+ * 当前 AiController 中未使用 RAG 功能，为节省资源暂时禁用。
+ * 如需重新启用：取消下方 @Configuration 的注释，同时恢复 LoveApp 中对应的 @Resource 字段和 RAG 方法即可。
  */
 
 @Slf4j
-@Configuration
+//@Configuration  // 临时禁用 RAG 阿里云百炼知识库顾问，避免启动时连接阿里云知识库产生费用
 public class LoveAppRagCloudAdvisorConfig {
 
     //从配置文件读取阿里云百炼的 API 密钥

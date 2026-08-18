@@ -10,14 +10,21 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
+
 import javax.sql.DataSource;
+
 import static org.springframework.ai.vectorstore.pgvector.PgVectorStore.PgDistanceType.COSINE_DISTANCE;
 import static org.springframework.ai.vectorstore.pgvector.PgVectorStore.PgIndexType.HNSW;
 
 /**
  * 手动配置 pgvector 向量数据库
+ *
+ * 【临时禁用说明】
+ * 此配置类用于连接阿里云 PostgreSQL RDS 向量数据库，启动时会建立数据库连接。
+ * 当前 AiController 中未使用 RAG 功能，为节省资源和连接费用暂时禁用。
+ * 如需重新启用：取消下方 @Configuration 的注释，同时恢复 LoveApp 中对应的 @Resource 字段和 RAG 方法即可。
  */
-@Configuration
+//@Configuration  // 临时禁用 RAG PgVector 向量库，避免启动时连接阿里云 PostgreSQL 数据库产生费用
 public class PGVectorVectorStoreConfig {
 
     @Resource
@@ -52,6 +59,7 @@ public class PGVectorVectorStoreConfig {
         return new JdbcTemplate(pgVectorDataSource());
     }
 
+    //按需开启！ 与阿里云的 PostgreSQL 购买的rds版本数据库 建立连接
     @Bean
     public VectorStore pgVectorVectorStore(EmbeddingModel dashScopeEmbeddingModel) {
         // 创建PgVectorStore实例，配置向量存储的参数
