@@ -30,7 +30,7 @@
           <slot name="empty">发条消息，开始对话吧~</slot>
         </div>
         <transition-group name="msg">
-          <MessageBubble v-for="m in visibleMessages" :key="m.id" :message="m" />
+          <MessageBubble v-for="m in visibleMessages" :key="m.id" :message="m" :rich="rich" />
         </transition-group>
       </div>
     </main>
@@ -92,7 +92,9 @@ export default {
     subtitle: { type: String, default: '' },
     placeholder: { type: String, default: '请输入消息...' },
     messages: { type: Array, default: () => [] },
-    streaming: { type: Boolean, default: false }
+    streaming: { type: Boolean, default: false },
+    // 是否启用智能体富渲染（Step 步骤卡片 + 文件卡片）
+    rich: { type: Boolean, default: false }
   },
   emits: ['send', 'clear'],
   setup(props, { emit }) {

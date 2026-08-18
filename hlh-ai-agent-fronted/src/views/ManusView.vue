@@ -5,6 +5,7 @@
     subtitle="我是你的超级智能体，具备回答问题、自主规划、网络搜索等各种能力，帮你搞定复杂任务"
     :messages="messages"
     :streaming="streaming"
+    rich
     placeholder="告诉我你需要什么帮助..."
     @send="handleSend"
     @clear="handleClear"
@@ -39,10 +40,10 @@ export default {
   name: 'ManusView',
   components: { ChatLayout },
   setup() {
-    // 启用打字机效果，逐字展示 AI 回复
+    // 启用打字机效果逐字展示 AI 回复；storageKey 将聊天记录持久化到 localStorage
     const { messages, streaming, send, clear } = useChat(
       (content, handlers) => chatWithManus(content, handlers),
-      { typewriter: true }
+      { typewriter: true, storageKey: 'hlh-chat-history-manus' }
     )
 
     const handleSend = (text) => send(text)

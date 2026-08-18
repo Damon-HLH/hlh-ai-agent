@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { Message } from '@arco-design/web-vue'
 
 let seed = 0
@@ -10,16 +10,71 @@ const nowTime = () => {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
+// ---------- localStorage 历史记录持久化 ----------
+
+// 从 localStorage 恢复历史记录，并把未完成的状态归一化
+const loadHistory = (key) => {
+  try {
+    const raw = localStorage.getItem(key)
+    if (!raw) {
+      return []
+    }
+    const list = JSON.parse(raw)
+    if (!Array.isArray(list)) {
+      return []
+    }
+    return list.map((m, i) => ({
+      id: m.id || `restored-${i}`,
+      role: m.role === 'user' ? 'user' : 'ai',
+      content: String(m.content || ''),
+      status: m.role === 'user' ? 'sent' : m.content ? 'done' : 'empty',
+      time: m.time || ''
+    }))
+  } catch (e) {
+    return []
+  }
+}
+
+const saveHistory = (key, messages) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(messages))
+  } catch (e) {
+    // localStorage 不可用或容量超限时静默忽略
+  }
+}
+
+const removeHistory = (key) => {
+  try {
+    localStorage.removeItem(key)
+  } catch (e) {
+    // 忽略
+  }
+}
+
 /**
  * 通用聊天逻辑组合式函数
  * @param {Function} sendFn 发送函数，接收 (content, handlers)，返回 Promise
- * @param {Object} options { typewriter: boolean } 是否启用打字机效果
+ * @param {Object} options { typewriter: boolean, storageKey: string }
+ *                         typewriter 是否启用打字机效果；storageKey 传入后自动持久化聊天记录
  */
 export function useChat(sendFn, options = {}) {
-  const { typewriter = false } = options
+  const { typewriter = false, storageKey = '' } = options
 
-  const messages = ref([])
+  const messages = ref(storageKey ? loadHistory(storageKey) : [])
   const streaming = ref(false)
+
+  // 防抖持久化：打字机流式输出时避免高频写入
+  let persistTimer = null
+  const persist = () => {
+    if (!storageKey) {
+      return
+    }
+    clearTimeout(persistTimer)
+    persistTimer = setTimeout(() => saveHistory(storageKey, messages.value), 300)
+  }
+  if (storageKey) {
+    watch(messages, persist, { deep: true })
+  }
 
   async function send(text) {
     const content = (text || '').trim()
@@ -121,6 +176,10 @@ export function useChat(sendFn, options = {}) {
   function clear() {
     messages.value = []
     streaming.value = false
+    if (storageKey) {
+      clearTimeout(persistTimer)
+      removeHistory(storageKey)
+    }
   }
 
   return {

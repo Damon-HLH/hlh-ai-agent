@@ -29,7 +29,7 @@
 </template>
 
 <script>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import ChatLayout from '@/components/ChatLayout.vue'
 import { useChat } from '@/composables/useChat'
@@ -43,14 +43,37 @@ const genChatId = () => {
   return `chat-${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
 
+// 持久化聊天室 ID：刷新页面后仍可延续同一段会话记忆
+const CHAT_ID_KEY = 'hlh-chat-love-chat-id'
+const loadChatId = () => {
+  try {
+    return localStorage.getItem(CHAT_ID_KEY) || genChatId()
+  } catch (e) {
+    return genChatId()
+  }
+}
+
 export default {
   name: 'LoveAppView',
   components: { ChatLayout },
   setup() {
-    const chatId = ref(genChatId())
+    const chatId = ref(loadChatId())
+    watch(
+      chatId,
+      (value) => {
+        try {
+          localStorage.setItem(CHAT_ID_KEY, value)
+        } catch (e) {
+          // 忽略
+        }
+      },
+      { immediate: true }
+    )
 
-    const { messages, streaming, send, clear } = useChat((content, handlers) =>
-      chatWithLoveApp(content, chatId.value, handlers)
+    // storageKey 将聊天记录持久化到 localStorage，刷新页面后自动恢复
+    const { messages, streaming, send, clear } = useChat(
+      (content, handlers) => chatWithLoveApp(content, chatId.value, handlers),
+      { storageKey: 'hlh-chat-history-love' }
     )
 
     const handleSend = (text) => send(text)
