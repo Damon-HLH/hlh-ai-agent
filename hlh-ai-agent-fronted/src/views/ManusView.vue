@@ -2,7 +2,7 @@
   <ChatLayout
     class="theme-manus"
     title="AI 超级智能体"
-    subtitle="我是你的超级智能体，具备回答问题、自主规划、网络搜索等各种能力，帮你搞定复杂任务"
+    subtitle="我是你的超级智能体，具备回答问题、自主规划、网络搜索、生成文案等各种能力，帮你搞定复杂任务"
     :messages="messages"
     :streaming="streaming"
     rich
@@ -21,8 +21,8 @@
       <ul class="welcome-list">
         <li>回答各类知识问题，从科学技术到生活百科</li>
         <li>自主规划，拆解并执行复杂任务</li>
-        <li>网络搜索，获取最新资讯并整理总结</li>
-        <li>协助创作，生成方案、报告与文档</li>
+        <li>网络搜索，获取最新资讯及图片，并整理总结</li>
+        <li>协助创作，生成方案、报告与文档（支持 PDF，HTML 格式）</li>
       </ul>
       <p class="welcome-close">告诉我你需要什么帮助或者直接提出你的问题。</p>
       <p class="welcome-close">试试：告诉我今天武汉的天气吧！</p>

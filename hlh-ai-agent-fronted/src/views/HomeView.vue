@@ -54,7 +54,7 @@ export default {
         path: '/manus',
         title: 'AI 超级智能体',
         tag: '全能任务助手',
-        desc: '具备回答问题、自主规划、网络搜索等各种能力，帮你搞定复杂任务。',
+        desc: '具备回答问题、自主规划、网络搜索、生成文案等各种能力，帮你搞定复杂任务。',
         icon: IconThunderbolt,
         color: '#4080ff',
         iconBg: '#e8f0fe'
