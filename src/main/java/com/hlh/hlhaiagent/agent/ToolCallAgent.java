@@ -1,13 +1,9 @@
 package com.hlh.hlhaiagent.agent;
 
 
-import cn.hutool.core.collection.CollUtil;
-import cn.hutool.core.util.StrUtil;
-import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatOptions;
-import com.hlh.hlhaiagent.agent.model.AgentState;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.ToolResponseMessage;
@@ -19,8 +15,14 @@ import org.springframework.ai.model.tool.ToolCallingManager;
 import org.springframework.ai.model.tool.ToolExecutionResult;
 import org.springframework.ai.tool.ToolCallback;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatOptions;
+import com.hlh.hlhaiagent.agent.model.AgentState;
+
+import cn.hutool.core.collection.CollUtil;
+import cn.hutool.core.util.StrUtil;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 处理工具调用的基础代理类，
@@ -146,5 +148,31 @@ public class ToolCallAgent extends ReActAgent {
         log.info(results);
 
         return results;
+    }
+
+    /**
+     * 任务结束后的最终总结：
+     * 通过终止工具结束时，上下文中助手消息只包含工具调用指令，没有面向用户的回答，
+     * 因此再发起一轮不带工具的调用，让模型基于已有上下文输出最终回复
+     *
+     * @return 最终面向用户的回答
+     */
+    @Override
+    protected String finalizeResponse() {
+        try {
+            getMessageList().add(new UserMessage(
+                    "任务已完成。请基于以上所有执行结果，直接给出面向用户的最终回答，不要再调用任何工具。"));
+            ChatResponse finalResponse = getChatClient().prompt(
+                            new Prompt(getMessageList(), chatOptions))
+                    .system(getSystemPrompt())
+                    .call()
+                    .chatResponse();
+            String finalText = finalResponse.getResult().getOutput().getText();
+            getMessageList().add(finalResponse.getResult().getOutput());
+            return finalText;
+        } catch (Exception e) {
+            log.error(getName() + "生成最终总结失败：" + e.getMessage());
+            return null;
+        }
     }
 }
