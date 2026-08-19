@@ -1,8 +1,11 @@
 import axios from 'axios'
 import { Message } from '@arco-design/web-vue'
 
-// 后端接口地址前缀
-export const API_BASE = 'http://localhost:8123/api'
+// 后端接口地址前缀：
+// 生产环境使用相对路径 /api，由 nginx 反向代理转发到后端；
+// 开发环境直接指向本地后端服务
+export const API_BASE =
+  process.env.NODE_ENV === 'production' ? '/api' : 'http://localhost:8123/api'
 
 // axios 实例：统一的请求配置与错误处理
 const request = axios.create({

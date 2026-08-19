@@ -5,8 +5,10 @@
  * 3. 提取后端文件链接（/api/files/...），用于渲染可点击的文档查看卡片
  */
 
-// 后端服务地址（文件链接需要跳转到后端查看）
-const API_ORIGIN = 'http://localhost:8123'
+// 后端服务地址（文件链接需要跳转到后端查看）：
+// 生产环境使用同源相对路径，由 nginx 反向代理转发到后端；
+// 开发环境直接指向本地后端服务
+const API_ORIGIN = process.env.NODE_ENV === 'production' ? '' : 'http://localhost:8123'
 
 // Step 标记：兼容中英文冒号
 const STEP_REGEX = /Step\s*(\d+)\s*[:：]\s*/g
