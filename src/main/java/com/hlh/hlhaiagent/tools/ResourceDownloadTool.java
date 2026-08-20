@@ -1,13 +1,13 @@
 package com.hlh.hlhaiagent.tools;
 
-import cn.hutool.core.io.FileUtil;
-import cn.hutool.http.HttpUtil;
+import java.io.File;
 
-import com.hlh.hlhaiagent.constant.FileConstant;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 
-import java.io.File;
+import com.hlh.hlhaiagent.constant.FileConstant;
+
+import cn.hutool.http.HttpUtil;
 
 /**
  * 资源下载工具类
@@ -23,10 +23,13 @@ public class ResourceDownloadTool {
             @ToolParam(description = "Name of the file to save the downloaded resource") String fileName) {
         // 下载文件保存目录
         String fileDir = FileConstant.FILE_SAVE_DIR + "/download";
-        String filePath = fileDir + "/" + fileName;
+        // 清洗文件名：防止路径穿越与非法字符（保留中文）
+        String safeFileName = FileConstant.sanitizeFileName(fileName, "resource_" + System.currentTimeMillis());
+        String filePath = fileDir + "/" + safeFileName;
 
         try {
-            FileUtil.mkdir(fileDir); // 确保目录存在
+            // 创建目录并校验可写性（生产Linux环境 java 进程用户常对工作目录无写权限）
+            FileConstant.ensureDir(fileDir);
             HttpUtil.downloadFile(url, new File(filePath));
             return "Resource downloaded successfully to: " + filePath;
         } catch (Exception e) {

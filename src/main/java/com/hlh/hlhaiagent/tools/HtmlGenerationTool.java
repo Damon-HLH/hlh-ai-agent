@@ -1,17 +1,5 @@
 package com.hlh.hlhaiagent.tools;
 
-import cn.hutool.core.io.FileUtil;
-import com.hlh.hlhaiagent.constant.FileConstant;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.ai.tool.annotation.Tool;
-import org.springframework.ai.tool.annotation.ToolParam;
-import org.springframework.stereotype.Component;
-
-import org.commonmark.ext.gfm.tables.TablesExtension;
-import org.commonmark.parser.Parser;
-import org.commonmark.renderer.html.HtmlRenderer;
-
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -19,6 +7,19 @@ import java.util.Collections;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.commonmark.ext.gfm.tables.TablesExtension;
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlRenderer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.ai.tool.annotation.Tool;
+import org.springframework.ai.tool.annotation.ToolParam;
+import org.springframework.stereotype.Component;
+
+import com.hlh.hlhaiagent.constant.FileConstant;
+
+import cn.hutool.core.io.FileUtil;
 
 /**
  * HTML文件生成工具
@@ -33,8 +34,10 @@ public class HtmlGenerationTool {
     private final String HTML_DIR = FileConstant.FILE_SAVE_DIR + "/html";
 
     public HtmlGenerationTool() {
-        // 确保目录存在
-        FileUtil.mkdir(HTML_DIR);
+        // 尝试提前创建目录（失败不阻断启动，调用时会再次校验并返回清晰错误信息）
+        if (!FileConstant.isWritableDir(HTML_DIR)) {
+            log.warn("HTML输出目录当前不可写: {}，生成HTML时可能失败，请检查进程用户写权限或用 -Dhlh.file.save-dir 指定可写目录", HTML_DIR);
+        }
     }
 
     /**
@@ -60,6 +63,10 @@ public class HtmlGenerationTool {
 
             // 生成完整的HTML内容
             String htmlContent = buildHtmlDocument(title, content);
+
+            // 校验输出目录可写（生产Linux环境 java 进程用户常对工作目录无写权限，
+            // 这里会抛出带操作指引的异常，而不是莫名奇妙的 Permission denied）
+            FileConstant.ensureDir(HTML_DIR);
 
             // 写入文件
             FileUtil.writeString(htmlContent, htmlPath.toString(), StandardCharsets.UTF_8);

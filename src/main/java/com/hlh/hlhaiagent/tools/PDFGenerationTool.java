@@ -94,9 +94,20 @@ public class PDFGenerationTool {
             @ToolParam(description = "Content to be included in the PDF, written in Chinese by default. " +
                     "Supports markdown image syntax ![](url) and headers with # symbols. Do not include emoji characters.") String content) {
         String fileDir = FileConstant.FILE_SAVE_DIR + "/pdf";
-        String filePath = fileDir + "/" + fileName;
-        // 创建目录
-        FileUtil.mkdir(fileDir);
+        // 清洗文件名：防止路径穿越与文件系统非法字符（保留中文）
+        String safeFileName = FileConstant.sanitizeFileName(fileName, "document_" + System.currentTimeMillis() + ".pdf");
+        if (!safeFileName.toLowerCase().endsWith(".pdf")) {
+            safeFileName = safeFileName + ".pdf";
+        }
+        String filePath = fileDir + "/" + safeFileName;
+        // 创建目录并校验可写性：生产Linux环境 java 进程用户常对工作目录无写权限，
+        // 提前校验并返回可操作的错误信息，避免 PdfWriter 抛出的误导性异常
+        try {
+            FileConstant.ensureDir(fileDir);
+        } catch (Exception e) {
+            log.error("PDF输出目录不可用: {}", fileDir, e);
+            return "生成PDF时出错: " + e.getMessage();
+        }
 
         // 清洗内容中的emoji等非BMP字符与不可见字符，避免编码异常
         content = sanitizeContent(content);
@@ -139,7 +150,16 @@ public class PDFGenerationTool {
 
         } catch (IOException e) {
             log.error("生成PDF时出错", e);
-            return "生成PDF时出错: " + e.getMessage() + "\n请检查是否需要安装中文字体，或将中文字体文件(.ttc/.ttf)复制到resources/fonts/目录下。";
+            String msg = e.getMessage() == null ? "" : e.getMessage();
+            // 文件写入失败（权限/路径问题）与字体问题是两类不同问题，提示需区分，
+            // 否则线上 Permission denied 会被误报成"请安装中文字体"
+            if (msg.contains("Permission denied") || msg.contains("No such file")
+                    || msg.contains("Access is denied") || msg.contains("拒绝访问") || msg.contains("找不到")) {
+                return "生成PDF时出错: 无法写入文件 " + filePath + "（" + msg + "）。"
+                        + "请检查运行 java 的进程用户对该目录的写权限，"
+                        + "或在启动参数中通过 -Dhlh.file.save-dir=/可写目录 指定文件保存目录。";
+            }
+            return "生成PDF时出错: " + msg + "\n请检查是否需要安装中文字体，或将中文字体文件(.ttc/.ttf)复制到resources/fonts/目录下。";
         } catch (Exception e) {
             log.error("PDF生成过程中发生未知错误", e);
             return "PDF生成过程中发生未知错误: " + e.getMessage();

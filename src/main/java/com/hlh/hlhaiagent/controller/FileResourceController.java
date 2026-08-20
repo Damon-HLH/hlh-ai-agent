@@ -1,20 +1,10 @@
 package com.hlh.hlhaiagent.controller;
 
 
-import com.hlh.hlhaiagent.constant.FileConstant;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -25,6 +15,18 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.hlh.hlhaiagent.constant.FileConstant;
 
 /**
  * 文件资源控制器
@@ -168,8 +170,14 @@ public class FileResourceController {
 
             // 对于HTML文件，添加安全头
             HttpHeaders headers = new HttpHeaders();
-            headers.add(HttpHeaders.CONTENT_DISPOSITION,
-                    disposition + "; filename=\"" + resource.getFilename() + "\"");
+            // HTTP头只允许ISO-8859-1字符，中文文件名直接写入会导致 Tomcat 报
+            // "Unicode character cannot be encoded" 并丢弃整个 Content-Disposition 头，
+            // 改用 Spring 的 ContentDisposition 构建器：自动按 RFC 5987 输出
+            // filename*=UTF-8''URL编码 格式，浏览器能正确识别中文文件名
+            String rawFilename = resource.getFilename() != null ? resource.getFilename() : filename;
+            headers.setContentDisposition(ContentDisposition.builder(disposition)
+                    .filename(rawFilename, StandardCharsets.UTF_8)
+                    .build());
 
             if (contentType.equals("text/html")) {
                 // 添加安全相关头信息，允许从原始站点加载资源

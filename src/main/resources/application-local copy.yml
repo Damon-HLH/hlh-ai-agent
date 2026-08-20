@@ -1,0 +1,72 @@
+spring:
+  application:
+    name: hlh-ai-agent
+  ai:
+    dashscope:
+      api-key: 你的qwen密钥
+      chat:
+        options:
+          model: qwen-plus
+    mcp:
+      client:
+        # stdio模式 本地访问服务
+        #        stdio:
+        #          servers-configuration: classpath:mcp-servers.json
+        # sse模式 远程调用服务 宝塔已经部署该mcp服务
+        sse:
+          connections:
+            image-search-mcp-server:
+              url: 你的MCP部署地址
+
+  # 邮箱发送配置
+  mail:
+    host: smtp.example.com
+    port: 587
+    username: 你的邮箱地址
+    password: 邮箱认证码
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+  #    vectorstore:
+  #      pgvector:
+  #      index-type: HNSW
+  #      distance-type: COSINE_DISTANCE
+  #      dimensions: 1024
+  #      max-document-batch-size: 10000 # Optional: Maximum number of documents per batch
+  # MySQL 数据源配置
+  datasource:
+    url: jdbc:mysql://localhost:3306/数据库名?useSSL=false&useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: 你的数据库密码
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+
+# PostgreSQL 数据源配置
+app:
+  datasource:
+    pgvector:
+      url: jdbc:postgresql://rds地址与数据库名
+      username: my_user
+      password: 你的数据库密码
+      driver-class-name: org.postgresql.Driver
+
+tools:
+  # searchAPI
+  search:
+    searchapi:
+      api-key: 你的searchAPI密钥
+    google:
+      api-key: 你的google密钥
+  # pexels图片搜索API
+  pexels:
+    api-key: 你的pexels密钥
+
+
+
+

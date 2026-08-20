@@ -1,24 +1,10 @@
 package com.hlh.hlhaiagent.app;
 
 
-import com.hlh.hlhaiagent.advisor.MyLoggerAdvisor;
-import com.hlh.hlhaiagent.advisor.ProhibitedWordAdvisor;
-import com.hlh.hlhaiagent.chatmemory.DatabaseChatMemory;
-import com.hlh.hlhaiagent.chatmemory.FileBasedChatMemory;
-import com.hlh.hlhaiagent.chatmemory.MySQLChatMemory;
-import com.hlh.hlhaiagent.chatmemory.MybatisPlusChatMemory;
-import com.hlh.hlhaiagent.config.PGVectorVectorStoreConfig;
-import com.hlh.hlhaiagent.mapper.LoveReportMapper;
-import com.hlh.hlhaiagent.rag.LoveAppRagCloudAdvisorConfig;
-import com.hlh.hlhaiagent.rag.LoveAppRagCustomAdvisorFactory;
-import com.hlh.hlhaiagent.rag.QueryRewriter;
-import com.hlh.hlhaiagent.tools.ToolsRegistration;
-import jakarta.annotation.Resource;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
-import org.springframework.ai.chat.client.advisor.api.Advisor;
-import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
@@ -26,13 +12,17 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.ai.tool.ToolCallbackProvider;
-import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
 
-import java.util.List;
+import com.hlh.hlhaiagent.advisor.MyLoggerAdvisor;
+import com.hlh.hlhaiagent.chatmemory.FileBasedChatMemory;
+import com.hlh.hlhaiagent.chatmemory.MybatisPlusChatMemory;
+import com.hlh.hlhaiagent.constant.FileConstant;
+
+import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
+import reactor.core.publisher.Flux;
 
 @Component
 @Slf4j
@@ -79,8 +69,8 @@ public class LoveApp {
     // 根据名称来注册 ChatModel  用于创建 ChatClient chatClient = ChatClient.builder(chatModel).build();
     @Autowired
     public LoveApp(ChatModel dashscopeChatModel, MybatisPlusChatMemory mybatisPlusChatMemory /*, MySQLChatMemory chatMemory*/) {
-        //1. 初始化基于文件的对话记忆
-        String fielDir = System.getProperty("user.dir") + "/tmp/chat-memory";
+        //1. 初始化基于文件的对话记忆（统一使用可配置/可回退的文件保存目录，避免线上目录无写权限）
+        String fielDir = FileConstant.FILE_SAVE_DIR + "/chat-memory";
         FileBasedChatMemory fileChatMemory = new FileBasedChatMemory(fielDir);
         //2. 初始化基于内存的对话记忆
         MessageWindowChatMemory inChatmemory = MessageWindowChatMemory.builder()

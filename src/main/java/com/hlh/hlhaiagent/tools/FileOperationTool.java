@@ -1,10 +1,12 @@
 package com.hlh.hlhaiagent.tools;
 
 
-import cn.hutool.core.io.FileUtil;
-import com.hlh.hlhaiagent.constant.FileConstant;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
+
+import com.hlh.hlhaiagent.constant.FileConstant;
+
+import cn.hutool.core.io.FileUtil;
 
 /**
  * 文件操作工具类，提供文件读写常用操作
@@ -29,10 +31,10 @@ public class FileOperationTool {
     public String writeFile(@ToolParam(description = "Name of a file to write") String filename,
                             @ToolParam(description = "Content to write to the file") String content){
         String filePath = FILE_DIR + "/" + filename;
-        // 创建目录
-        FileUtil.mkdir(FILE_DIR);
-
         try {
+            // 创建目录并校验可写性，失败时抛出带操作指引的异常
+            // （生产Linux环境 java 进程用户常对工作目录无写权限）
+            FileConstant.ensureDir(FILE_DIR);
             FileUtil.writeUtf8String(content, filePath);
             return "File written successfully to:" + filename;
         }catch (Exception e){
